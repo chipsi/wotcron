@@ -62,8 +62,9 @@ void Players2(int *p_Array, int *p_riadkov)
     {
         a_id  = PQgetvalue(result, i, 0);
         *(p_Array+i) = stoi(a_id); 
+        a_id.clear();
     }
-    PQclear(result);
+    PQclear(result);PQfinish(conn);sql.clear();
 
 
 }
@@ -81,7 +82,7 @@ int CountPlayers2()
     a_id  = PQgetvalue(result, 0, 0);
     PQclear(result);
     i = stoi(a_id);
-
+    PQclear(result);PQfinish(conn);a_id.clear();
     return i;
 
 }
@@ -102,6 +103,7 @@ string Sekera(int *p_Array, int i, int *ptr_riadkov, int *ptr_sprac)
             
             account_id = *(p_Array + ii);
             account_ids +=  to_string(account_id) + ",";
+
             *ptr_sprac = *ptr_sprac + 1;
         }        
     }
@@ -212,6 +214,7 @@ void UpdatePlayersInfo(PGconn *conn, string account_id, string client_language, 
     sql += " last_battle_time = to_timestamp("+last_battle_time+") WHERE account_id  = " + account_id;
 
     PQsendQuery(conn, sql.c_str());
+    sql.clear();
    
 }
 
@@ -222,6 +225,7 @@ void DeletePlayers(PGconn *conn, string a_id)
     string sql2    = "DELETE FROM players WHERE account_id = " + a_id;
     PQexec(conn, sql.c_str());
     PQexec(conn, sql2.c_str());
+    sql.clear();sql2.clear();
 }
 
 void InsertPlayersInfo(PGconn *conn, string insert)
@@ -273,15 +277,14 @@ int main()
     int i,spracovanych,upd,ins; spracovanych = 0;
     upd = 0; ins = 0;
     int *p_upd, *p_ins; p_upd = &upd; p_ins = &ins;
-    string json; string *p_json; p_json = &json;
+    string json; string *p_json; p_json = &json;string post;
     for(i = 0; i < riadkov; i = i + 100)
     {
         
             a_id = Sekera(p_Array,i,ptr_riadkov,p_sprac);
             
             /* POST data pre poslanie na server */
-            string post = field+"&account_id="+a_id; 
-            
+            post = field+"&account_id="+a_id; 
             
             json = Send(method,post); 
                                  

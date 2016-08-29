@@ -65,12 +65,15 @@ void UlozZakladHracov()
         if(wn8.size() < 1){wn8 = "0";}
 
         value += "( " + a_id + ",\'" + nick + "\'," + gr + ", " + wn8 + "),";
+
+        a_id.clear();nick.clear();gr.clear();wn8.clear();
     }
     value.erase(value.end()-1); // Vymaze poslednu ciarku
     
     insert = insert + value;
     Pgsql vloz;
     vloz.Query(insert.c_str());
+    
 
 }
 
@@ -104,9 +107,9 @@ void Update1()
 
         update = "UPDATE nabor_new SET battles_all = "+battles_all+ ", winrate = "+ wins+  ", battles_sk = "+ skirmish + ", battles_sr = "+stronghold+" WHERE account_id =" + account_id;
         PQexec(conn,update.c_str());
-        
+        update.clear();battles_all.clear();wins.clear();skirmish.clear();stronghold.clear();account_id.clear();
     }
-    
+    PQclear(data1);PQfinish(conn);
 }
 string Winrate(string battles_all, string wins)
 {
@@ -164,10 +167,10 @@ void Update2()
 
         sql_update = "UPDATE nabor_new SET pocet_x = " + resultx + ", pocet_8 = " + result8 + ", pocet_6 = " + result6 + " WHERE account_id = " + account_id;
         PQexec(update, sql_update.c_str());
-        //cout << account_id << " - " << resultx << " - " << result8 << " - " << result6 << endl;
+        sql_update.clear();resultx.clear();result8.clear();result6.clear();account_id.clear();
 
     }
-
+    PQclear(data);PQfinish(conn1);PQfinish(conn2);PQfinish(conn3);
 
 }
 
@@ -182,6 +185,7 @@ void LevelX(PGconn *conn, string *account_id, string *resultx)
 
     res = PQexec(conn, sql.c_str());
     *resultx = PQgetvalue(res,0,0);
+    PQclear(res);sql.clear();
 }
 
 void Level8(PGconn *conn, string *account_id, string *result8)
@@ -193,6 +197,7 @@ void Level8(PGconn *conn, string *account_id, string *result8)
 
     res = PQexec(conn, sql.c_str());
     *result8 = PQgetvalue(res,0,0);
+    PQclear(res);sql.clear();
 }
 
 void Level6(PGconn *conn, string *account_id, string *result6)
@@ -204,6 +209,7 @@ void Level6(PGconn *conn, string *account_id, string *result6)
 
     res = PQexec(conn, sql.c_str());
     *result6 = PQgetvalue(res,0,0);
+    PQclear(res);
 }
 
 string BattlesAll(PGconn *conn, string account_id)
@@ -214,9 +220,66 @@ string BattlesAll(PGconn *conn, string account_id)
     
     res = PQexec(conn, sql.c_str());
     result = PQgetvalue(res,0,0); 
-    
+    PQclear(res);
     return result;
 }
+
+/* Kontrola kolko hrac odohral bitiek za 7,14,30 dni */
+void Update3()
+{
+    Pgsql pgsql;
+    PGconn *conn;
+    PGresult *data; 
+    string query = "select account_id from nabor_new";  
+    string account_id;string *p_account_id; p_account_id = &account_id;
+    string data7;string *p_data7; p_data7 = &data7;
+    string data14;string *p_data14; p_data14 = &data14;
+    string data30;string *p_data30; p_data30 = &data30;  
+    string sql_update;
+
+    conn = pgsql.Get();
+    data    = PQexec(conn,query.c_str()); // Poslem dotaz do databazy
+    int riadkov = PQntuples(data); // zistim pocet riadkov
+    
+    void History(string *p_account_id, PGconn *conn, string *p_data7, string *p_data14, string *p_data30);
+
+    int i;
+    for(i=0; i < riadkov;i++)
+    {
+        account_id = PQgetvalue(data,i,0);
+        History(p_account_id, conn, p_data7,p_data14,p_data30);
+        
+        sql_update = "UPDATE nabor_new SET last7 = " + data7 + ", last14 = " + data14 + ", last30 = " + data30 + " WHERE account_id = " + account_id;
+        PQexec(conn, sql_update.c_str());
+        sql_update.clear();account_id.clear();data7.clear();data14.clear();data30.clear();
+    }
+
+    PQclear(data);PQfinish(conn);
+}
+
+void History(string *p_account_id, PGconn *conn, string *p_data7, string *p_data14, string *p_data30)
+{
+    string query7  = "select sum(battles) from players_stat_all_history where date > now() - interval \'7 day\' and account_id = " + *p_account_id;
+    string query14 = "select sum(battles) from players_stat_all_history where date > now() - interval \'14 day\' and account_id = " + *p_account_id;
+    string query30 = "select sum(battles) from players_stat_all_history where date > now() - interval \'30 day\' and account_id = " + *p_account_id;
+
+    PGresult *result;
+
+    result  = PQexec(conn,query7.c_str());
+    *p_data7 = PQgetvalue(result,0,0);
+    PQclear(result);
+
+    result  = PQexec(conn,query14.c_str());
+    *p_data14 = PQgetvalue(result,0,0);
+    PQclear(result);
+
+    result  = PQexec(conn,query30.c_str());
+    *p_data30 = PQgetvalue(result,0,0);
+    PQclear(result);
+
+
+}
+
 
 int main()
 {
@@ -241,8 +304,8 @@ int main()
     void Update2();
     Update2();
     
-
-
+    void Update3();
+    Update3();
 
     time(&stop);
     timestamp_t t1 = get_timestamp();
