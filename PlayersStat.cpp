@@ -4,38 +4,22 @@
 #include <sys/time.h>
 #include "./lib/SendCurl.h"
 #include "./lib/Pgsql.h"
+#include <unordered_map>
 
 /* Meranie casu */
 typedef unsigned long long timestamp_t;
+typedef unordered_map<int,int> container;
+
 
 static timestamp_t get_timestamp ()
 {
       struct timeval now;
       gettimeofday (&now, NULL);
-      return  now.tv_usec + (timestamp_t)now.tv_sec * 1000000;
+      return  now.tv_usec + (timestamp_t)now.tv_sec * 2000000;
 }
 
 using namespace std;
 
-void Players2(int *p_Array, int *p_riadkov)
-{
-    PGconn *conn; PGresult *result;
-    Pgsql trieda;
-    conn = trieda.pgsql;
-    int i; string a_id;
-
-    string sql = "SELECT account_id FROM players_all";
-    result = PQexec(conn, sql.c_str());
-
-    for(i = 0; i < *p_riadkov; i++)
-    {
-        a_id  = PQgetvalue(result, i, 0);
-        *(p_Array+i) = stoi(a_id); 
-    }
-    PQclear(result);
-
-
-}
 class Players 
 {
     public:
@@ -61,58 +45,41 @@ class Players
             return i;
         }
 
-        // Ziskavanie account_id po 1000ks 
-        string GetPlayers(int offset)
+        // Ziskavanie account_id po 600ks 
+        void GetPlayers(int offset, container *account_ids)
         {
             PGresult *result;
-            string query    = "SELECT account_id FROM players_all OFFSET " + to_string(offset) + " LIMIT 180";
+            string query    = "SELECT account_id FROM players_all OFFSET " + to_string(offset) + " LIMIT 600";
             result          = PQexec(this->conn, query.c_str());
             
             int riadkov     = PQntuples(result);
             
-            int i;string account_ids, a_id;
+            int i;
             
             for(i = 0; i < riadkov; i++)
             {
-                a_id       = PQgetvalue(result,i,0);
-                account_ids += a_id + ",";
+                (*account_ids)[i]  = stoi (PQgetvalue(result,i,0));
+                
             }
             PQclear(result);
-            return account_ids;
         }
+
+        
+        
 
 };
 
-void ExtractFromString(string account_ids, int stovka, string *p_a_id) // Vyber stovku ID z 1000 ID
+// Rozsekam int account_id na jeden string so 200 account_id oddeleny ciarkami pre posielanie dotazov
+void GetAccountId(int stovka, container *account_ids, string *ids)
 {
-    int i ; int z = 0; int p = 0; int  k = 0; int posledny_znak;
-
-    posledny_znak = account_ids.size(); 
-    cout << "posledny znak "<<posledny_znak<< endl;
-    for(i=0;i < stovka; i++)
-    {
-        p = account_ids.find(',',p+1);
-        if(i == (stovka - 100)){ z = p-9;break;}
-    }
     
-    p = z;
-    cout << p << endl;
-    for(i = 0; i < 100; i++)
+    for(int i = stovka-100; i < stovka; i++)
     {
-        p = account_ids.find(',',p+1); 
-        k = p; if(k == posledny_znak){k = k - 1;break;}
+        *ids += to_string((*account_ids)[i]) + ",";
     }
-     cout << "kcko" << k << endl;
-    *p_a_id = account_ids.substr(z,k-z);    
+
+    ids->erase(ids->end()-1); // Vymaze poslednu ciarku
 }
-
-
-
-
-
-
-
-
 
 
 int main()
@@ -122,38 +89,42 @@ int main()
     time_t start, stop;
     time(&start);
     cout << endl << "Program zacal pracovat: " << ctime(&start) << endl;
+   
+    Players players;
+    // Najprv zistim kolko hracov budem spracovavat
+    int riadkov = players.GetPocet();
+
+    /*  Sem si deklarujem potrebne premenne aby sa v cykle nehromazdili */
+    container a_ids; container *p_a_ids; p_a_ids = &a_ids; // unordered_map na account_id
     
-    Players *c_players = new Players; // Ziskam pointer na triedu pre pracu s hracmi
-    int riadkov = c_players->GetPocet(); // Zistim celkovy pocet hracov na kontrolu
+    // string so 100 account_id
+    string aids1;string *p_aids1; p_aids1 = &aids1;
+    string aids2;string *p_aids2; p_aids2 = &aids2;
+    string aids3;string *p_aids3; p_aids3 = &aids3;
+    string aids4;string *p_aids4; p_aids4 = &aids4;
+    string aids5;string *p_aids5; p_aids5 = &aids5;
+    string aids6;string *p_aids6; p_aids6 = &aids6;
 
-    //string ExtractFromString(string account_ids, int stovka, string *p_a_id);
-    string a_id1,a_id2;
-    string *p_a_id1, *p_a_id2;
-    p_a_id1 = &a_id1; p_a_id2 = &a_id2; 
-
-
-    int i;string account_ids;
-    for(i = 0; i < riadkov; i = i + 1000)
+    for(int i = 0; i < riadkov; i += 600) // Tu si nastavim po kolko hracov naraz budem spracovavat
     {
+        players.GetPlayers(i, p_a_ids); // ziskam do unordered_map int account_id
         
-        account_ids = c_players->GetPlayers(i); // Ziskam 1000 hracov
-       
-        thread T1(ExtractFromString,account_ids,100,p_a_id1);
-        thread T2(ExtractFromString,account_ids,200,p_a_id2);
-        
-        T1.join();
-        T2.join();
+        // premenim na to na string so 100 account_id oddeleny ciarkami
+        thread string1(GetAccountId,100,p_a_ids,p_aids1); 
+        thread string2(GetAccountId,200,p_a_ids,p_aids2);
+        thread string3(GetAccountId,300,p_a_ids,p_aids3);
+        thread string4(GetAccountId,400,p_a_ids,p_aids4);
+        thread string5(GetAccountId,500,p_a_ids,p_aids5);
+        thread string6(GetAccountId,600,p_a_ids,p_aids6);
 
-        cout <<  "prvy : "  << endl << a_id1 << endl;
-        cout <<  "druhy : " << endl << a_id2 << endl;
+        string1.join();string2.join();string3.join();string4.join();string5.join();string6.join();
 
+        cout << aids6 << endl;
 
         break;
-        
-        
-        
-        account_ids.clear();
     }
+
+   
 
     
 
@@ -167,8 +138,9 @@ int main()
 
 
 
-    timestamp_t t1 = get_timestamp();
-    double secs = (t1 - t0) / 1000000.0L;
+    timestamp_t t2 = get_timestamp();
+    double secs = (t2 - t0) / 2000000.0L;
+    time(&stop);
     cout << "Cas:\t\t" << secs << endl;
     cout << "Program skoncil pracovat: " << ctime(&stop) << endl;
     return 0;
