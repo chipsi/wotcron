@@ -52,7 +52,7 @@ void Players2(int *p_Array, int *p_riadkov)
 {
     PGconn *conn; PGresult *result;
     Pgsql trieda;
-    conn = trieda.pgsql;
+    conn = trieda.Get();
     int i; string a_id;
 
     string sql = "SELECT account_id FROM players_all";
@@ -64,25 +64,25 @@ void Players2(int *p_Array, int *p_riadkov)
         *(p_Array+i) = stoi(a_id); 
         a_id.clear();
     }
-    PQclear(result);PQfinish(conn);sql.clear();
 
-
+    sql.clear();PQclear(result);
 }
 
 int CountPlayers2()
 {
     PGconn *conn; PGresult *result;
     Pgsql trieda;
-    conn = trieda.pgsql;
+    conn = trieda.Get();
     int i; string a_id;
 
     string sql = "SELECT count(account_id) FROM players_all";
     result = PQexec(conn, sql.c_str());
 
     a_id  = PQgetvalue(result, 0, 0);
-    PQclear(result);
+    
     i = stoi(a_id);
-    PQclear(result);PQfinish(conn);a_id.clear();
+
+    a_id.clear();PQclear(result);
     return i;
 
 }
@@ -125,8 +125,8 @@ void SpracujHracov(int i, int *p_Array, string *json, string a_id100, int *upd, 
 
     //Otvorim si spojenie do databazy 
     PGconn  *conn;
-    const char *conninfo = "host=37.205.11.183 port=5432 dbname=clan user=deamon password=sedemtri";
-    conn = PQconnectdb(conninfo);
+    Pgsql trieda;
+    conn = trieda.Get();
 
     //Prepared statment 
     PQprepare(  conn,
@@ -151,7 +151,7 @@ void SpracujHracov(int i, int *p_Array, string *json, string a_id100, int *upd, 
         
         string a_id    = to_string(*(p_Array + ii));
         string insert  = dataHraca(a_id, json);
-        string sql = "SELECT account_id,client_language,global_rating,extract(epoch from logout_at),extract(epoch from created_at),extract(epoch from last_battle_time) FROM players_info WHERE account_id = ";
+        
 
         if(insert.compare("null") == 0){DeletePlayers(conn, a_id); *ins = *ins + 1;continue;}
         
@@ -196,7 +196,7 @@ void SpracujHracov(int i, int *p_Array, string *json, string a_id100, int *upd, 
         if(logout_at.compare(la) !=0){   UpdatePlayersInfo(conn,a_id, cl, gr, la, ca, lbt); *upd = *upd + 1;continue;}
         if(last_battle_time.compare(lbt) !=0){ UpdatePlayersInfo(conn,a_id, cl, gr, la, ca, lbt);*upd = *upd + 1; continue;}
 
-        sql.clear();a_id.clear();client_language.clear();global_rating.clear();logout_at.clear();created_at.clear();last_battle_time.clear();
+        a_id.clear();client_language.clear();global_rating.clear();logout_at.clear();created_at.clear();last_battle_time.clear();
         cl.clear();gr.clear();la.clear();ca.clear();lbt.clear();
         PQclear(result);
 
@@ -225,15 +225,13 @@ void DeletePlayers(PGconn *conn, string a_id)
     string sql2    = "DELETE FROM players WHERE account_id = " + a_id;
     PQexec(conn, sql.c_str());
     PQexec(conn, sql2.c_str());
+
     sql.clear();sql2.clear();
 }
 
 void InsertPlayersInfo(PGconn *conn, string insert)
 {
-    PGresult *res;
-    res = PQexec(conn, insert.c_str());
-    PQclear(res);
-    
+    PQexec(conn, insert.c_str());
 }  
 
 
@@ -292,7 +290,7 @@ int main()
 
             a_id.clear();post.clear(); json.clear();
             spracovanych += sprac; 
-            cout << "Spracovanych: " << spracovanych << "  update: " << upd << "  insert: " << ins << endl;
+            cout << "Spracovanych: " << spracovanych << "  update: " << upd << "  delete: " << ins << endl;
    }
     
    

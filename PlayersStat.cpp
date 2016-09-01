@@ -102,11 +102,14 @@ void SendPost(string *aids, string *json)
 // Spracovanie JSON
 void Json(string *aids, string *json)
 {
-    string account_id,data_hraca;
-    int pos,tmp,z_dataHraca,e_dataHraca;
+    string DataHraca(string *aids, string *json, string account_id);
+    void PlayersStat(string data, int *pStatAll, string table);
+    
+    string data,account_id;
+    int pos,tmp, StatAll[7],StatGMc[7];
+    int *pStatAll; pStatAll = StatAll;
+    int *pStatGMc; pStatGMc = StatGMc;
 
-    cout << *aids << endl;
-    /* Citanie stringu aids a vyberanie account_id */
     pos = 0;
     while(pos != -1)
     {
@@ -116,19 +119,92 @@ void Json(string *aids, string *json)
         else
             { pos = tmp; account_id = aids->substr(pos-9,9); }
 
-        z_dataHraca = json->find(account_id); // zaciatok kde sa data zacinaju
-        e_dataHraca = json->find("}},",z_dataHraca); // tu by mali koncit
+        // Najde vsetky udaje hraca
+        data = DataHraca(aids,json,account_id);
 
-        data_hraca = json->substr(z_dataHraca, e_dataHraca - z_dataHraca);
-        cout << data_hraca << endl << endl;  
+        // Spracuje statistiky ALL
+        thread TStatAll(PlayersStat,data,pStatAll,"all");
+        thread TStatGMc(PlayersStat,data,pStatGMc,"globalmap_champion");
+
+        TStatAll.join();TStatGMc.join();
+
+        
+        cout << "Battles all: " << pStatAll[4] << " batlles gm champion: " << pStatGMc[4] << endl;
+        data.clear();  
 
     }
-    
+}
+
+// Funkcia vyberie vsetky udaje pre hraca  
+string DataHraca(string *aids, string *json, string account_id)
+{
+    int z_dataHraca,e_dataHraca;
+    string data;
     
 
+    z_dataHraca = json->find(account_id); // zaciatok kde sa data zacinaju
+    e_dataHraca = json->find("}},",z_dataHraca); // tu by mali koncit
+
+    data = json->substr(z_dataHraca, (e_dataHraca + 2) - z_dataHraca);
+
+    return data;
+}
+
+void PlayersStat(string data, int *Stat, string table)
+{
+    string dmg,spot,frag,def,battles,wins,xp;
+    string all; // Budem hladat iba tieto statt
+    int zac, kon;
     
+    zac = data.find(table);
+    kon = data.find("}",zac);
+    all = data.substr(zac, (kon+1) - zac);
+    data.clear(); 
+   
+    // damage_dealt
+    zac = all.find("damage_dealt");
+    kon = all.find(",", zac);
+    dmg = all.substr(zac + 14, kon - (zac + 14));
 
+    // spot
+    zac = all.find("spotted");
+    kon = all.find(",", zac);
+    spot = all.substr(zac + 9, kon - (zac + 9));
 
+    // frag
+    zac = all.find("\"frags\"");
+    kon = all.find(",", zac);
+    frag = all.substr(zac + 8, kon - (zac + 8));
+
+    //dropped_capture_points
+    zac = all.find("dropped_capture_points");
+    kon = all.find(",", zac);
+    def = all.substr(zac + 24, kon - (zac + 24));
+
+    // battles
+    zac = all.find("\"battles\"");
+    kon = all.find(",", zac);
+    battles = all.substr(zac + 10, kon - (zac + 10));
+
+    // wins
+    zac = all.find("\"wins\"");
+    kon = all.find(",", zac);
+    wins = all.substr(zac + 7, kon - (zac + 7));
+
+    // xp
+    zac = all.find("\"battle_avg_xp\"");
+    kon = all.find(",", zac);
+    xp = all.substr(zac + 16, kon - (zac + 16));
+
+    Stat[0]      = stoi(dmg);
+    Stat[1]     = stoi(spot);
+    Stat[2]     = stoi(frag);
+    Stat[3]     = stoi(def);
+    Stat[4]     = stoi(battles);
+    Stat[5]     = stoi(wins);
+    Stat[6]     = stoi(xp);
+    
+    all.clear();table.clear();
 }
 
 
