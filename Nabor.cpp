@@ -178,7 +178,7 @@ void Update2()
 /* Spocita hracove desiny */
 void LevelX(PGconn *conn, string *account_id, string *resultx)
 {
-    string sql  = "select count(tank_id) from pvs_random where tank_id IN (select tank_id from encyclopedia_vehicles where level = 10) and account_id = ";
+    string sql  = "select count(tank_id) from pvs_all where tank_id IN (select tank_id from encyclopedia_vehicles where level = 10) and account_id = ";
     PGresult *res;
 
     sql = sql + *account_id;
@@ -190,7 +190,7 @@ void LevelX(PGconn *conn, string *account_id, string *resultx)
 
 void Level8(PGconn *conn, string *account_id, string *result8)
 {
-    string sql  = "select count(tank_id) from pvs_random where tank_id IN (select tank_id from encyclopedia_vehicles where level = 8) and account_id = ";
+    string sql  = "select count(tank_id) from pvs_all where tank_id IN (select tank_id from encyclopedia_vehicles where level = 8) and account_id = ";
     PGresult *res;
 
     sql = sql + *account_id;
@@ -202,7 +202,7 @@ void Level8(PGconn *conn, string *account_id, string *result8)
 
 void Level6(PGconn *conn, string *account_id, string *result6)
 {
-    string sql  = "select count(tank_id) from pvs_random where tank_id IN (select tank_id from encyclopedia_vehicles where level = 6) and account_id = ";
+    string sql  = "select count(tank_id) from pvs_all where tank_id IN (select tank_id from encyclopedia_vehicles where level = 6) and account_id = ";
     PGresult *res;
 
     sql = sql + *account_id;
@@ -229,54 +229,73 @@ void Update3()
 {
     Pgsql pgsql;
     PGconn *conn;
-    PGresult *data; 
+    PGresult *data, *result; 
     string query = "select account_id from nabor_new";  
     string account_id;string *p_account_id; p_account_id = &account_id;
-    string data7;string *p_data7; p_data7 = &data7;
-    string data14;string *p_data14; p_data14 = &data14;
-    string data30;string *p_data30; p_data30 = &data30;  
+    string data7;   string *p_data7;    p_data7 = &data7;
+    string data14;  string *p_data14;   p_data14 = &data14;
+    string data30;  string *p_data30;   p_data30 = &data30;  
+    string avgxp;   string *p_avgxp;    p_avgxp = &avgxp;
     string sql_update;
 
     conn = pgsql.Get();
     data    = PQexec(conn,query.c_str()); // Poslem dotaz do databazy
     int riadkov = PQntuples(data); // zistim pocet riadkov
     
-    void History(string *p_account_id, PGconn *conn, string *p_data7, string *p_data14, string *p_data30);
+    void History(string *p_account_id, PGconn *conn, string *p_data7, string *p_data14, string *p_data30,string *p_avgxp);
 
     int i;
     for(i=0; i < riadkov;i++)
     {
         account_id = PQgetvalue(data,i,0);
-        History(p_account_id, conn, p_data7,p_data14,p_data30);
+        History(p_account_id, conn, p_data7,p_data14,p_data30,p_avgxp);
         
-        sql_update = "UPDATE nabor_new SET last7 = " + data7 + ", last14 = " + data14 + ", last30 = " + data30 + " WHERE account_id = " + account_id;
-        PQexec(conn, sql_update.c_str());
+        sql_update = "UPDATE nabor_new SET last7="+data7+",last14="+data14+",last30="+data30+",avgxp=" + avgxp + " WHERE account_id = " + account_id;
+        
+        result = PQexec(conn, sql_update.c_str());
+            if (PQresultStatus(result) != PGRES_COMMAND_OK)
+                {cout << "Chyba update dni: " <<  PQresultErrorMessage(result) << endl;}
+
         sql_update.clear();account_id.clear();data7.clear();data14.clear();data30.clear();
     }
 
     PQclear(data);PQfinish(conn);
 }
 
-void History(string *p_account_id, PGconn *conn, string *p_data7, string *p_data14, string *p_data30)
+void History(string *p_account_id, PGconn *conn, string *p_data7, string *p_data14, string *p_data30,string *avgxp)
 {
     string query7  = "select sum(battles) from players_stat_all_history where date > now() - interval \'7 day\' and account_id = " + *p_account_id;
     string query14 = "select sum(battles) from players_stat_all_history where date > now() - interval \'14 day\' and account_id = " + *p_account_id;
     string query30 = "select sum(battles) from players_stat_all_history where date > now() - interval \'30 day\' and account_id = " + *p_account_id;
+    string queryxp   = "select battle_avg_xp from players_stat_all where account_id = " + *p_account_id;
 
     PGresult *result;
 
     result  = PQexec(conn,query7.c_str());
+         if (PQresultStatus(result) != PGRES_TUPLES_OK)
+            {cout << "Chyba query7: " <<  PQresultErrorMessage(result) << endl; }
+    
     *p_data7 = PQgetvalue(result,0,0);
+    
     PQclear(result);
 
     result  = PQexec(conn,query14.c_str());
+        if (PQresultStatus(result) != PGRES_TUPLES_OK)
+            {cout << "Chyba query14: " <<  PQresultErrorMessage(result) << endl;}
     *p_data14 = PQgetvalue(result,0,0);
     PQclear(result);
 
     result  = PQexec(conn,query30.c_str());
+        if (PQresultStatus(result) != PGRES_TUPLES_OK)
+            {cout << "Chyba query30: " <<  PQresultErrorMessage(result) << endl;}
     *p_data30 = PQgetvalue(result,0,0);
     PQclear(result);
 
+    result  = PQexec(conn,queryxp.c_str());
+        if (PQresultStatus(result) != PGRES_TUPLES_OK)
+            {cout << "Chyba queryxp: " <<  PQresultErrorMessage(result) << endl;}
+    *avgxp = PQgetvalue(result,0,0);
+    PQclear(result);
 
 }
 
@@ -306,6 +325,10 @@ int main()
     
     void Update3();
     Update3();
+
+    // Vacuum tabulky nabor_new
+    void Vacuum();
+    Vacuum();
 
     time(&stop);
     timestamp_t t1 = get_timestamp();

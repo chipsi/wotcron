@@ -25,10 +25,6 @@ string Send(string method, string post)
     
     json = send.SendWOT(method, post);
    
-    /* Spracovanie hracov 
-    void SpracujHracov(int stovka, int i, int *p_Array, string *json, int *ptr_riadkov);
-    SpracujHracov(stovka, i, p_Array, p_json, ptr_riadkov);
-    */
     return json; 
 }
 
@@ -53,12 +49,16 @@ void Players2(int *p_Array, int *p_riadkov)
     PGconn *conn; PGresult *result;
     Pgsql trieda;
     conn = trieda.Get();
-    int i; string a_id;
+    int i; string a_id;int ntuples;
 
     string sql = "SELECT account_id FROM players_all";
-    result = PQexec(conn, sql.c_str());
 
-    for(i = 0; i < *p_riadkov; i++)
+    result = PQexec(conn, sql.c_str());
+    ntuples = PQntuples(result);
+
+    cout << "Celkom na spracovanie: " << ntuples << endl;
+
+    for(i = 0; i < ntuples; i++)
     {
         a_id  = PQgetvalue(result, i, 0);
         *(p_Array+i) = stoi(a_id); 
@@ -122,6 +122,7 @@ void SpracujHracov(int i, int *p_Array, string *json, string a_id100, int *upd, 
     string dataHraca(string account_id, string *json);  // funkcia na parsovanie JSON
     void DeletePlayers(PGconn *conn, string a_id); // Vymazanie hraca z databazy
     void UpdatePlayersInfo(PGconn *conn, string account_id, string client_language, string global_rating, string logout_at, string created_at, string last_battle_time); // Update players_info
+    void InsertPlayersInfo(PGconn *conn,string account_id, string client_language, string global_rating, string logout_at, string created_at, string last_battle_time );
 
     //Otvorim si spojenie do databazy 
     PGconn  *conn;
@@ -184,27 +185,36 @@ void SpracujHracov(int i, int *p_Array, string *json, string a_id100, int *upd, 
         const char *paramValues[1];
         paramValues[0] = a_id.c_str();
         result  = PQexecPrepared(conn,"players_info",1,paramValues,NULL,NULL,0);
+            if (PQresultStatus(result) != PGRES_TUPLES_OK)
+            {cout << "players_info prepared statment je chybny: " <<  PQerrorMessage(conn) << endl;}
         
-        string client_language  = PQgetvalue(result,0,1);
-        string global_rating    = PQgetvalue(result,0,2);
-        string logout_at        = PQgetvalue(result,0,3);
-        string created_at       = PQgetvalue(result,0,4);
-        string last_battle_time = PQgetvalue(result,0,5);
+        int ntuples = PQntuples(result); 
 
-        if(client_language.compare(cl) !=0){   UpdatePlayersInfo(conn,a_id, cl, gr, la, ca, lbt); *upd = *upd + 1; continue;}
-        if(global_rating.compare(gr) !=0){    UpdatePlayersInfo(conn,a_id, cl, gr, la, ca, lbt); *upd = *upd + 1; continue;}
-        if(logout_at.compare(la) !=0){   UpdatePlayersInfo(conn,a_id, cl, gr, la, ca, lbt); *upd = *upd + 1;continue;}
-        if(last_battle_time.compare(lbt) !=0){ UpdatePlayersInfo(conn,a_id, cl, gr, la, ca, lbt);*upd = *upd + 1; continue;}
+        if(ntuples == 1)
+        {
+            string client_language  = PQgetvalue(result,0,1);
+            string global_rating    = PQgetvalue(result,0,2);
+            string logout_at        = PQgetvalue(result,0,3);
+            string created_at       = PQgetvalue(result,0,4);
+            string last_battle_time = PQgetvalue(result,0,5);
 
+            if(client_language.compare(cl) !=0){   UpdatePlayersInfo(conn,a_id, cl, gr, la, ca, lbt); *upd = *upd + 1; continue;}
+            if(global_rating.compare(gr) !=0){    UpdatePlayersInfo(conn,a_id, cl, gr, la, ca, lbt); *upd = *upd + 1; continue;}
+            if(logout_at.compare(la) !=0){   UpdatePlayersInfo(conn,a_id, cl, gr, la, ca, lbt); *upd = *upd + 1;continue;}
+            if(last_battle_time.compare(lbt) !=0){ UpdatePlayersInfo(conn,a_id, cl, gr, la, ca, lbt);*upd = *upd + 1; continue;}
+
+            
+        }
+        else
+        {
+            InsertPlayersInfo(conn,a_id,cl,gr,la,ca,lbt);
+        }
         a_id.clear();client_language.clear();global_rating.clear();logout_at.clear();created_at.clear();last_battle_time.clear();
         cl.clear();gr.clear();la.clear();ca.clear();lbt.clear();
         PQclear(result);
-
     }
-   
     
-    
-    PQfinish(conn);
+  PQfinish(conn);  
     
 }
 
@@ -213,7 +223,12 @@ void UpdatePlayersInfo(PGconn *conn, string account_id, string client_language, 
     string sql = "UPDATE players_info SET client_language = '" + client_language + "', global_rating = " + global_rating + ", logout_at = to_timestamp(" + logout_at + "), created_at = to_timestamp("+created_at+"),";
     sql += " last_battle_time = to_timestamp("+last_battle_time+") WHERE account_id  = " + account_id;
 
-    PQsendQuery(conn, sql.c_str());
+    PGresult *result;
+    result = PQexec(conn, sql.c_str());
+    if (PQresultStatus(result) != PGRES_COMMAND_OK)
+            {cout << "Chyba update players_info "  <<  PQresultErrorMessage(result) << endl;} 
+
+    PQclear(result);
     sql.clear();
    
 }
@@ -223,15 +238,32 @@ void DeletePlayers(PGconn *conn, string a_id)
 {
     string sql     = "DELETE FROM players_all WHERE account_id = " + a_id;
     string sql2    = "DELETE FROM players WHERE account_id = " + a_id;
-    PQexec(conn, sql.c_str());
-    PQexec(conn, sql2.c_str());
+    PGresult *result;
+    
+    result = PQexec(conn, sql.c_str());
+        if (PQresultStatus(result) != PGRES_COMMAND_OK)
+            {cout << "Chyba delete players_all "  <<  PQresultErrorMessage(result) << endl;} 
+    PQclear(result);
+
+
+    result = PQexec(conn, sql2.c_str());
+        if (PQresultStatus(result) != PGRES_COMMAND_OK)
+            {cout << "Chyba delete players "  <<  PQresultErrorMessage(result) << endl;} 
+    PQclear(result);
 
     sql.clear();sql2.clear();
 }
 
-void InsertPlayersInfo(PGconn *conn, string insert)
+void InsertPlayersInfo(PGconn *conn,string account_id, string client_language, string global_rating, string logout_at, string created_at, string last_battle_time )
 {
-    PQexec(conn, insert.c_str());
+    PGresult *result;
+
+    string insert = "INSERT INTO players_info VALUES ("+account_id+","+global_rating+",'"+client_language+"',to_timestamp("+logout_at+"),to_timestamp("+last_battle_time+"),to_timestamp("+created_at+"))";
+
+    result = PQexec(conn, insert.c_str());
+        if (PQresultStatus(result) != PGRES_COMMAND_OK)
+            {cout << "Chyba insert do players_info "  <<  PQresultErrorMessage(result) << endl;} 
+    PQclear(result);
 }  
 
 
@@ -276,6 +308,7 @@ int main()
     upd = 0; ins = 0;
     int *p_upd, *p_ins; p_upd = &upd; p_ins = &ins;
     string json; string *p_json; p_json = &json;string post;
+    
     for(i = 0; i < riadkov; i = i + 100)
     {
         
@@ -285,12 +318,12 @@ int main()
             post = field+"&account_id="+a_id; 
             
             json = Send(method,post); 
-                                 
+                        
             SpracujHracov(i, p_Array, p_json, a_id,p_upd,p_ins);
 
             a_id.clear();post.clear(); json.clear();
             spracovanych += sprac; 
-            cout << "Spracovanych: " << spracovanych << "  update: " << upd << "  delete: " << ins << endl;
+            //cout << "Spracovanych: " << spracovanych << "  update: " << upd << "  delete: " << ins << endl;
    }
     
    
