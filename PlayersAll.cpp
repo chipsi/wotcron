@@ -117,51 +117,51 @@ class Spracuj{
         Spracuj(int clan_id[100], string json)
         {
             int i = 0, cid, members_count;
-            
+
             int *p_members_count; p_members_count = &members_count;
-            
+
             string clan_data;
 
             /* 3 pripojenia do databazy */
-            PGconn *conn1; 
-            PGconn *conn2; 
+            PGconn *conn1;
+            PGconn *conn2;
             Pgsql *pg1 = new Pgsql;conn1 = pg1->Get(); delete pg1;
             Pgsql *pg2 = new Pgsql;conn2 = pg2->Get(); delete pg2;
-            
-            
+
+
             /* Prepared statment */
             prepared_select_players_all(conn1);
             prepared_select_members_role(conn2);
 
-            
+
             while(!clan_id[i] == 0)
             {
                 cid = clan_id[i];
-                
+
                 // Natiahne do containeru players_all udaje z mojej databazy
                 exec_select_players_all( conn1, cid) ;
-                
+
                 // Natiahne do containeru members_role udaje z mojej databazy
                 exec_select_members_role( conn2, cid) ;
-                
-                
+
+
                 // Vyberiem z json iba clanove udaje
                 clan_data = this->spracuj_json_vyber_clan_id(json,cid,p_members_count);
-                
+
                 // Ak je clan prazdny, chcem to vediet a zapisat si to
                 if(clan_data.empty())
                 {
                     // Zapis to do tabulky clan_all_empty
-                    this->clan_is_empty(conn1,cid);   
+                    this->clan_is_empty(conn1,cid);
                     stat.empty_clan ++;
-                    
+
                     // Ak mam nejakych hracov v players_all zmen im clan_id na 0
                     this->update_players_all_empty(conn2,cid);
                     cout << "Klan " << cid << " je bez hracov " << endl;
-                    
+
                     players_all.clear();fresh.clear();i++;continue;
                 }
-                
+
                 // Ak je iny pocet clenov v tabulke clan_all oprav top
                 if(members_count != (int)players_all.size())
                 {
@@ -171,7 +171,7 @@ class Spracuj{
                 // Naplni container fresh udajmi z wargamingu
                 this->spracuj_json_map(clan_data,p_members_count);
 
-                               
+
 
                 this->spracuj_players_all(cid,conn1,players_all,fresh);
                 this->spracuj_members_role(cid,conn2,members_role,fresh);
@@ -187,7 +187,7 @@ class Spracuj{
             PQfinish(conn1);PQfinish(conn2);
         }
 
-        
+
 
         ~Spracuj()
         {
@@ -202,7 +202,7 @@ class Spracuj{
 
                 player pl;
                 player fr;
-                
+
                 /* Hladam kto nie je v klane */
                 for(it = players_all.begin(); it != players_all.end(); it++)
                 {
@@ -215,7 +215,7 @@ class Spracuj{
 
                 /* Hladam kto je novy v klane */
                 void novy_v_klane_players_all(PGconn *conn, int account_id, int clan_id, string account_name);
-                
+
                 for(it = fresh.begin(); it != fresh.end(); it++)
                 {
                      if(players_all.count(it->first) == 0)
@@ -225,7 +225,7 @@ class Spracuj{
                          string name  = fr.account_name;
 
                          this->novy_v_klane_players_all(conn , aid , clan_id, name);
-                         
+
                      }
 
                 }
@@ -236,18 +236,18 @@ class Spracuj{
                 for(it = fresh.begin(); it != fresh.end(); it++)
                 {
                      fr = it->second;
-                    
+
                      it2 = players_all.find(fr.account_id);
-                     
+
                      if(it2 != players_all.end())
-                     {  
+                     {
                         pl = it2->second;
-                        
+
                         name_fresh = fr.account_name;
                         name_players_all = pl.account_name;
-                                                
 
-                        if(name_fresh.compare(name_players_all) != 0)  
+
+                        if(name_fresh.compare(name_players_all) != 0)
                         {
                             this->zmena_nick_players_all(conn, name_players_all, name_fresh, fr.account_id);
                         }
@@ -256,7 +256,7 @@ class Spracuj{
                       }
                 }
 
-               
+
             }
             void spracuj_members_role(int clan_id,PGconn *conn, mymap members_role, mymap fresh)
             {
@@ -265,7 +265,7 @@ class Spracuj{
 
                 player mr;
                 player fr;
-                
+
                 /* Hladam kto nie je v klane */
                 for(it = members_role.begin(); it != members_role.end(); it++)
                 {
@@ -277,7 +277,7 @@ class Spracuj{
                 }
 
                 /* Hladam kto je novy v klane */
-                
+
                 for(it = fresh.begin(); it != fresh.end(); it++)
                 {
                      if(members_role.count(it->first) == 0)
@@ -287,7 +287,7 @@ class Spracuj{
                          string role    = fr.role_i18n;
 
                          this->novy_v_klane_members_role(conn , aid , clan_id, role);
-                         
+
                      }
 
                 }
@@ -302,7 +302,7 @@ class Spracuj{
                 string clan_data;
 
                 int begin, end;
-                begin   = json.find(to_string(clan_id)); 
+                begin   = json.find(to_string(clan_id));
                 end     = json.find("]},",begin);
 
                 clan_data = json.substr(begin-1, (end+3) - begin);
@@ -332,15 +332,15 @@ class Spracuj{
                 end         = clan_data.find("]",begin);
                 clan_data   = clan_data.substr(begin, end - begin);
 
-                
-                
+
+
                 while(begin > 0)
                 {
                     begin       = clan_data.find("role_i18n", posled);
                     if(begin == -1)break;
                     end         = clan_data.find(",",begin);
                     role        = clan_data.substr(begin + 12, (end-1) - (begin +12));
-                    
+
                     begin       = clan_data.find("joined_at",end);
                     end         = clan_data.find(",",begin);
                     join        = stoi(clan_data.substr(begin + 11, (end-1) - (begin +11)));
@@ -354,7 +354,7 @@ class Spracuj{
                     id          = stoi(clan_data.substr(begin + 12, (end-1) - (begin +12)));
 
                     posled      = end;
-                    
+
                     data.account_id = id;
                     data.account_name = nick;
                     data.joined_at  = join;
@@ -363,12 +363,12 @@ class Spracuj{
                     fresh[id] = data;
 
                 }
-                
 
-                
+
+
 
             }
-            
+
             /* ################## Praca s databazou ############################## */
             void novy_v_klane_members_role(PGconn *conn, int account_id, int clan_id, string role)
             {
@@ -376,23 +376,23 @@ class Spracuj{
                 int rows;
                 /* Skontrolujem ci ma niekde nieco neukoncene */
                 string q1 = "SELECT * FROM members_role WHERE account_id = "+to_string(clan_id)+" AND dokedy IS NULL";
-                
+
                 result = PQexec(conn,q1.c_str());
                 if (PQresultStatus(result) != PGRES_TUPLES_OK)
                         {cout << "Chyba select members_role " <<  PQresultErrorMessage(result) << endl;}
                 rows   = PQntuples(result);
                 PQclear(result);
-                
+
                 if(rows >= 1)
                 {
-                    string q2 = "UPDATE members_role SET dokedy = now() WHERE account_id = "+to_string(account_id);
+                    string q2 = "UPDATE members_role SET dokedy = now() WHERE dokedy IS NULL and account_id = "+to_string(account_id);
                     result = PQexec(conn,q2.c_str());
                         if (PQresultStatus(result) != PGRES_COMMAND_OK)
                         {cout << "Chyba update members_role stare dokedy " <<  PQresultErrorMessage(result) << endl;}
                     PQclear(result);
                 }
 
-                /* Vlozim nove udaje do databazy */ 
+                /* Vlozim nove udaje do databazy */
                 string q3 = "INSERT INTO members_role (account_id,clan_id,role,odkedy) VALUES ("+to_string(account_id)+","+to_string(clan_id)+",'"+role+"', now())";
                 result = PQexec(conn,q3.c_str());
                         if (PQresultStatus(result) != PGRES_COMMAND_OK)
@@ -400,22 +400,22 @@ class Spracuj{
                 PQclear(result);
 
             }
-            
+
             void nie_je_v_klane_members_role(PGconn *conn, int account_id)
             {
                 PGresult *result;
                 string query = "UPDATE members_role SET dokedy = now() WHERE account_id = "+to_string(account_id);
-                result = PQexec(conn, query.c_str()); 
+                result = PQexec(conn, query.c_str());
                 if (PQresultStatus(result) != PGRES_COMMAND_OK)
                         {cout << "Chyba UPDATE now members_role " <<  PQresultErrorMessage(result) << endl;}
                 PQclear(result);query.clear();
             }
-            
+
             void zmena_nick_players_all(PGconn *conn, string old_name, string new_name, int account_id)
             {
                 PGresult *result;
                 string q1 = "INSERT INTO players_nick (account_id,nick) VALUES ("+to_string(account_id)+",'"+old_name+"')";
-                
+
                 result = PQexec(conn, q1.c_str());
                 if (PQresultStatus(result) != PGRES_COMMAND_OK)
                         {cout << "Chyba INSERT players_nick " <<  PQresultErrorMessage(result) << endl;}
@@ -426,16 +426,16 @@ class Spracuj{
                 if (PQresultStatus(result) != PGRES_COMMAND_OK)
                         {cout << "Chyba UPDATE nick in players_all " <<  PQresultErrorMessage(result) << endl;}
                 PQclear(result);   q1.clear();q2.clear();
-                
+
                 stat.change_nick ++;
 
             }
-            
+
             void nie_je_v_klane_players_all(PGconn *conn, int account_id)
             {
                 PGresult *result;
                 string query = "UPDATE players_all SET clan_id = 0 WHERE account_id = "+to_string(account_id);
-                result = PQexec(conn, query.c_str()); 
+                result = PQexec(conn, query.c_str());
                 if (PQresultStatus(result) != PGRES_COMMAND_OK)
                         {cout << "Chyba UPDATE 0 players_all " <<  PQresultErrorMessage(result) << endl;}
                 PQclear(result);query.clear();
@@ -445,20 +445,20 @@ class Spracuj{
             {
                 PGresult *result;
                 int rows;
-                
+
                 string q1 = "SELECT account_id FROM players_all WHERE account_id = "+ to_string(account_id);
                 string i1 = "INSERT INTO players_all (account_id,clan_id,nickname) VALUES ("+to_string(account_id)+","+to_string(clan_id)+",'"+account_name+"' )"  ;
                 string u1 = "UPDATE players_all SET clan_id = "+to_string(clan_id)+" WHERE account_id = "+to_string(account_id);
 
-                
+
                 result = PQexec(conn, q1.c_str());
-                
+
                 if (PQresultStatus(result) != PGRES_TUPLES_OK)
                         {cout << "Chyba select players_all " <<  PQresultErrorMessage(result) << endl;}
                 rows   = PQntuples(result);
-                
+
                 PQclear(result);
-                
+
                 if(rows == 0)
                 {
                     result = PQexec(conn, i1.c_str());
@@ -482,7 +482,7 @@ class Spracuj{
             {
                     string query = "INSERT INTO clan_all_empty VALUES (" + to_string(cid) + ") " ;
                     PQexec(conn, query.c_str());
-                    
+
 
             }
             void update_players_all_empty(PGconn *conn, int cid)
@@ -493,16 +493,16 @@ class Spracuj{
             void update_clan_all_members_count(PGconn *conn, int cid, int members_count)
             {
                 string query = "UPDATE clan_all SET members_count = "+to_string(members_count)+" WHERE clan_id = " + to_string(cid) ;
-                PQexec(conn, query.c_str()); 
+                PQexec(conn, query.c_str());
             }
 
 
             void prepared_select_players_all(PGconn *conn)
             {
                 PGresult *result;
-                
+
                 string query  = "SELECT account_id,nickname FROM players_all WHERE clan_id = $1 ";
-                
+
                 result = PQprepare(conn,"players_all",query.c_str(),1,NULL);
                 if (PQresultStatus(result) != PGRES_COMMAND_OK)
                 {
@@ -511,8 +511,8 @@ class Spracuj{
                 }
                 PQclear(result);
             }
-            
-            
+
+
             void exec_select_players_all(PGconn *conn, int clan_id)
             {
                 PGresult *result;
@@ -521,13 +521,13 @@ class Spracuj{
 
                 string a_id = to_string(clan_id);
                 paramValues[0] = a_id.c_str();
-               
+
                 player data;
-                
+
                 result  = PQexecPrepared(conn,"players_all",1,paramValues,NULL,NULL,0);
                     if (PQresultStatus(result) != PGRES_TUPLES_OK)
                         {fprintf(stderr, "Select statment players_all je chybny: %s ", PQresultErrorMessage(result));}
-                        
+
                 riadkov  = PQntuples(result);
 
                 for(i = 0; i < riadkov; i++)
@@ -544,9 +544,9 @@ class Spracuj{
             void prepared_select_members_role(PGconn *conn)
             {
                 PGresult *result;
-                
+
                 string query  = "SELECT account_id,role,odkedy FROM members_role WHERE clan_id = $1 AND dokedy IS NULL";
-                
+
                 result = PQprepare(conn,"members_role",query.c_str(),1,NULL);
                 if (PQresultStatus(result) != PGRES_COMMAND_OK)
                 {
@@ -564,13 +564,13 @@ class Spracuj{
 
                 string a_id = to_string(clan_id);
                 paramValues[0] = a_id.c_str();
-               
+
                 player data;
-                
+
                 result  = PQexecPrepared(conn,"members_role",1,paramValues,NULL,NULL,0);
                     if (PQresultStatus(result) != PGRES_TUPLES_OK)
                         {fprintf(stderr, "Select statment members_role je chybny: %s ", PQresultErrorMessage(result));}
-                        
+
                 riadkov  = PQntuples(result);
 
                 for(i = 0; i < riadkov; i++)
@@ -619,11 +619,11 @@ int main(){
 
 
 
-        
+
         delete doit;
         clan_id.clear();json.clear();
         CleaArray(a_clan_id);
-     
+
     }
 
         t1 = chrono::high_resolution_clock::now();
