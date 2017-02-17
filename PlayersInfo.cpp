@@ -237,7 +237,9 @@ void UpdatePlayersInfo(PGconn *conn, string account_id, string client_language, 
 void DeletePlayers(PGconn *conn, string a_id)
 {
     string sql     = "DELETE FROM players_all WHERE account_id = " + a_id;
+    /* Tabulka players uz nie je. DEPRECATED
     string sql2    = "DELETE FROM players WHERE account_id = " + a_id;
+    */
     PGresult *result;
     
     result = PQexec(conn, sql.c_str());
@@ -245,13 +247,16 @@ void DeletePlayers(PGconn *conn, string a_id)
             {cout << "Chyba delete players_all "  <<  PQresultErrorMessage(result) << endl;} 
     PQclear(result);
 
-
+    /*
     result = PQexec(conn, sql2.c_str());
         if (PQresultStatus(result) != PGRES_COMMAND_OK)
             {cout << "Chyba delete players "  <<  PQresultErrorMessage(result) << endl;} 
     PQclear(result);
+    */
 
-    sql.clear();sql2.clear();
+    sql.clear();
+    
+    /*sql2.clear();*/
 }
 
 void InsertPlayersInfo(PGconn *conn,string account_id, string client_language, string global_rating, string logout_at, string created_at, string last_battle_time )
