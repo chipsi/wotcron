@@ -1,5 +1,9 @@
 
+<<<<<<< HEAD
 LIBFLAGS:= -L/usr/lib/x86_64-linux-gnu -lpq -lcurl
+=======
+LIBFLAGS:= -L/usr/lib/x86_64-linux-gnu -lpq -lcurl 
+>>>>>>> d0d07bebbcc18d6fa46370aa0cc1dddf716eab42
 CPPFLAGS:= --std=c++11 -Wall -I/usr/include/postgresql -O2 -s
 
 

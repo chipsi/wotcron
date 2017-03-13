@@ -26,10 +26,18 @@ class GetId
         {
             json player = *it;
 
+<<<<<<< HEAD
            
                 cout << "\n Account_id: "  << player["account_id"].get<int>() << " Ban info: "  <<player["ban_info"] << " Ban time: "  << player["ban_time"] ;
                 it++;
            
+=======
+            if(player["ban_time"] != NULL)
+            {
+                cout << "Account_id: "  <<player["account_id"].get<int>() << " Ban info: "  <<player["ban_info"] << " Ban time: "  << player["ban_time"] << endl;
+                it++;
+            }
+>>>>>>> d0d07bebbcc18d6fa46370aa0cc1dddf716eab42
         }
 
         
@@ -88,7 +96,11 @@ class GetId
 
     void get_account_id(string *ids, int offset)
     {
+<<<<<<< HEAD
             string query = "SELECT account_id FROM players_all ORDER BY account_id OFFSET " + to_string(offset) + " LIMIT 100";
+=======
+            string query = "SELECT account_id FROM players_all OFFSET " + to_string(offset) + " LIMIT 100";
+>>>>>>> d0d07bebbcc18d6fa46370aa0cc1dddf716eab42
             PGconn *conn;
             PGresult *result;
 

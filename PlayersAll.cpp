@@ -404,7 +404,11 @@ class Spracuj{
             void nie_je_v_klane_members_role(PGconn *conn, int account_id)
             {
                 PGresult *result;
+<<<<<<< HEAD
                 string query = "UPDATE members_role SET dokedy = now() WHERE account_id = "+to_string(account_id);
+=======
+                string query = "UPDATE members_role SET dokedy = now() WHERE dokedy IS NULL AND account_id = "+to_string(account_id);
+>>>>>>> d0d07bebbcc18d6fa46370aa0cc1dddf716eab42
                 result = PQexec(conn, query.c_str());
                 if (PQresultStatus(result) != PGRES_COMMAND_OK)
                         {cout << "Chyba UPDATE now members_role " <<  PQresultErrorMessage(result) << endl;}
