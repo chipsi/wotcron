@@ -1,8 +1,9 @@
-LIBFLAGS:=  -lpthread
-CPPFLAGS:=  --std=c++11 -Wall -O2 -s
+LIBFLAGS:=  -lpthread -lcurl 
+CPPFLAGS:=  --std=c++11 -Wall -O2 
 
-NewPlayers: NewPlayers.o
-	$(CXX) -o ./bin/NewPlayers NewPlayers.o  $(LIBFLAGS) 
+NewPlayers: NewPlayers.o 
+	$(CXX) -o ./bin/NewPlayers NewPlayers.o ./lib/SendCurl.o  $(LIBFLAGS) 
 
 NewPlayers.o:	NewPlayers.cpp
 	$(CXX) -c $(CPPFLAGS) NewPlayers.cpp
+

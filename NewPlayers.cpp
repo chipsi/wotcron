@@ -4,7 +4,9 @@
 #include <chrono>
 #include <thread>
 #include <mutex>
+#include <fstream>
 
+#include "./lib/SendCurl.h"
 
 /** Kontainer **/
 #include <queue>
@@ -15,6 +17,7 @@ queue<int> id;
 
 // Zamok pre kriticku cast
 mutex mtx;
+mutex filetx;
 
 
 // Naplni Frontu FIFO int o dlzke 9 znakov
@@ -58,7 +61,50 @@ void PripravDavku()
       davka += to_string(id) + ",";
 
   }
-  cout << davka << endl;
+
+  void SendPost(string data);
+  SendPost(davka);
+
+}
+
+static void UlozJson(string json)
+{
+  static int i = 0;
+  string nameoffile = "json";
+  string konec = ".json";
+
+  ofstream file;
+
+  file.open("./json/" + nameoffile + to_string(i) + konec );
+
+
+  file << json;
+
+  file.close();
+
+  i = i + 1 ;  
+  
+
+}
+
+void SendPost(string id)
+{
+   
+    const char text[] = "&fields=client_language,created_at,last_battle_time&language=cs";
+    string field(text);
+
+    const string method   = "/account/info/";
+
+    string post_data = field  + "&account_id="+ id;
+
+    SendCurl send;
+
+    
+    string json = send.SendWOT(method, post_data);
+
+  filetx.lock();
+    UlozJson(json);
+  filetx.unlock();
 
 }
 
@@ -70,17 +116,18 @@ int main()
   int num_thread = 8;
   thread t[num_thread];
 
+      while(id.size() > 0) 
+      {
+        for(int i = 0; i < num_thread; i++)
+        {
+          t[i] = thread(PripravDavku);
+        }
 
-  for(int i = 0; i < num_thread; i++)
-  {
-    t[i] = thread(PripravDavku);
-  }
+        for(int i = 0; i < num_thread; i++)
+        {
+          t[i].join();
+        }
+      }
 
-  for(int i = 0; i < num_thread; i++)
-  {
-    t[i].join();
-  }
-
-    cout << id.size() << endl;
   return 0;
 }
