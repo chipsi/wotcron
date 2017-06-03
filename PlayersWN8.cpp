@@ -301,29 +301,49 @@ void UlozHraca(PGconn *conn, int account_id, float wn8player)
 {
     string Datum();
     string date = Datum();
-    PGresult *result;
-    int ntuples;
+    PGresult *result, *result2;
+    int ntuples, ntuples2;
 
     string q1 = "SELECT account_id FROM wn8player_history WHERE account_id = "+to_string(account_id)+" and date = '"+date+"'";
+    string q2 = "SELECT account_id FROM wn8player WHERE account_id="+to_string(account_id);
+
     result = PQexec(conn, q1.c_str());
+    result2= PQexec(conn, q2.c_str());
 
     ntuples = PQntuples(result);
+    ntuples2= PQntuples(result2);
+
     PQclear(result);
 
+    // Pracuj s tabulkou wn8player
+    if(ntuples2 == 0)
+    {
+        string insert2 = "INSERT INTO wn8player (account_id,wn8) VALUES ("+to_string(account_id)+","+to_string(wn8player)+")";
+        result = PQexec(conn,insert2.c_str());
+        if (PQresultStatus(result) != PGRES_COMMAND_OK)
+                        {cout << "insert wn8player je chybny: " <<  PQresultErrorMessage(result) << endl;}
+
+        PQclear(result);
+    }
+    else
+    {
+        string update2  = "UPDATE wn8player SET wn8 = "+to_string(wn8player)+" WHERE account_id = "+to_string(account_id);
+        result = PQexec(conn,update2.c_str());
+        if (PQresultStatus(result) != PGRES_COMMAND_OK)
+                        {cout << "update wn8player je chybny: " <<  PQresultErrorMessage(result) << endl;}
+
+        PQclear(result);
+    }
+
+   
+    // Pracuj s tabulkou wn8player_history
     if(ntuples == 0)
     {
-        string insert = "INSERT INTO wn8player_history (account_id,wn8,date) VALUES ("+to_string(account_id)+","+to_string(wn8player)+",'"+date+"')";
-        string update = "UPDATE wn8player SET wn8 = "+to_string(wn8player)+" WHERE account_id = "+to_string(account_id);
-
+        string insert  = "INSERT INTO wn8player_history (account_id,wn8,date) VALUES ("+to_string(account_id)+","+to_string(wn8player)+",'"+date+"')";
+        
         result = PQexec(conn,insert.c_str());
         if (PQresultStatus(result) != PGRES_COMMAND_OK)
                         {cout << "insert into wn8player_history je chybny: " <<  PQresultErrorMessage(result) << endl;}
-
-        PQclear(result);
-
-        result = PQexec(conn,update.c_str());
-        if (PQresultStatus(result) != PGRES_COMMAND_OK)
-                        {cout << "update wn8player je chybny: " <<  PQresultErrorMessage(result) << endl;}
 
         PQclear(result);
 
