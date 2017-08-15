@@ -28,9 +28,31 @@ class Players
         {
             Pgsql *pgsql    = new Pgsql;
             this->conn      = pgsql->Get();
+            this->VacuumAnalyze();
             delete pgsql;
         }
 
+        void VacuumAnalyze()
+        {
+            string query = "VACUUM FULL ANALYZE pvs_all";
+                PQsendQuery(this->conn,query.c_str());
+            query = "VACUUM FULL ANALYZE pvs_defense";
+                PQsendQuery(this->conn,query.c_str());
+            query = "VACUUM FULL ANALYZE pvs_skirmish";
+                PQsendQuery(this->conn,query.c_str());
+            query = "VACUUM FULL ANALYZE pvs_globalmap";
+                PQsendQuery(this->conn,query.c_str());
+            query = "VACUUM FULL ANALYZE pvs_all_history";
+                PQsendQuery(this->conn,query.c_str());
+            query = "VACUUM FULL ANALYZE pvs_defense_history";
+                PQsendQuery(this->conn,query.c_str());
+            query = "VACUUM FULL ANALYZE pvs_skirmish_history";
+                PQsendQuery(this->conn,query.c_str());
+            query = "VACUUM FULL ANALYZE pvs_globalmap_history";
+                PQsendQuery(this->conn,query.c_str());
+        }
+        
+        
         // Ziskam pocet hracov v databaze
         int GetPocet()
         {
@@ -451,7 +473,7 @@ int main()
     p_j1 = &j1;p_j2 = &j2;p_j3 = &j3;p_j4 = &j4;p_j5 = &j5;
     p_j6 = &j6;p_j7 = &j7;p_j8 = &j8;p_j9 = &j9;p_j10 = &j10;
 
-    double S,J,C;
+   // double S,J,C;
     timestamp_t t0 = get_timestamp();
     cout << "Ma sa spracovat "<<riadkov<< " hracov" << endl;
     
@@ -460,7 +482,7 @@ int main()
         
         if((riadkov - i) >= 10)
         {
-            timestamp_t S0 = get_timestamp();
+            //timestamp_t S0 = get_timestamp();
             thread T1(SendPost,aids[i],p_j1) ;
             thread T2(SendPost,aids[i+1],p_j2) ; 
             thread T3(SendPost,aids[i+2],p_j3) ; 
@@ -473,9 +495,9 @@ int main()
             thread T10(SendPost,aids[i+9],p_j10) ; 
             
             T1.join();T2.join();T3.join();T4.join();T5.join();T6.join();T7.join();T8.join();T9.join();T10.join();
-            timestamp_t S1 = get_timestamp();
+            //timestamp_t S1 = get_timestamp();
 
-            timestamp_t json0 = get_timestamp();
+            //timestamp_t json0 = get_timestamp();
             /* Spracovanie JSON a poslanie dat do databazy */
            thread J1(Json,aids[i],j1);
            thread J2(Json,aids[i+1],j2);
@@ -489,8 +511,9 @@ int main()
            thread J10(Json,aids[i+9],j10);
            J1.join();J2.join();J3.join();J4.join();J5.join();J6.join();J7.join();J8.join();J9.join();J10.join();
            
-           timestamp_t json1 = get_timestamp();
+           //timestamp_t json1 = get_timestamp();
 
+          /*
            S = (S1 - S0) / 2000000.0L;
            J = (json1 - json0) / 2000000.0L;
            C = (json1 - t0) / 2000000.0L;
@@ -499,12 +522,15 @@ int main()
            cout << "Cas zatial:\t\t" << C << endl;
            cout << "Cas SendPost:\t\t" << S << endl;
            cout << "Cas JSON:\t\t" << J << endl << "=====================" << endl << endl;
+
+           */
            
         }
         j1.clear();j2.clear();j3.clear();j4.clear();j5.clear();j6.clear();j7.clear();j8.clear();j9.clear();j10.clear();
     }
 
     aids.erase(aids.begin(), aids.end());
+    players.VacuumAnalyze();
 
     timestamp_t t2 = get_timestamp();
     double secs = (t2 - t0) / 2000000.0L;
