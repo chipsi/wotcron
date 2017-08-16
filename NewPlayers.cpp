@@ -51,7 +51,7 @@ PGconn* Spojenie()
 void NaplnFifo()
 {
   // 504279883 504000000
-  int from = 526124797; // 9 - cifier
+  int from = 504000000; // 9 - cifier
   int to   = 549400000; // 9 - cifier
 
   for(; from < to; from++)
@@ -127,29 +127,28 @@ void SpracujData(string dat)
    json js = json::parse(dat);
 
    string status = js["status"].get<string>();
-   
+    
    if(status.compare("ok") == 0)
    {
         json udaje = js["data"];
-        json::iterator it  = udaje.begin();
-        json::iterator it2 = udaje.end();
-
-        for( ;it != it2; it++)
+        for (auto& x : json::iterator_wrapper(udaje))
         {
-           if(*it != NULL)
-           {
-              json player = *it;
-              //UlozDoDatabazy(player["account_id"].get<int>(),player["client_language"].get<string>(),player["created_at"].get<int>(),player["last_battle_time"].get<int>());
-              player_data.account_id = player["account_id"].get<int>();
-              player_data.client_language = player["client_language"].get<string>();
-              player_data.created_at = player["created_at"].get<int>();
-              player_data.last_battle_time = player["last_battle_time"].get<int>();
-
-
-              data[player["account_id"].get<int>()] = player_data;
-              
-           }
             
+            if(x.value() != NULL)
+            {
+                json j = x.value();
+                
+                if(!j.is_null())
+                {
+                    player_data.account_id = j["account_id"].get<int>();
+                    player_data.client_language = j["client_language"].get<string>();
+                    player_data.created_at = j["created_at"].get<int>();
+                    player_data.last_battle_time = j["last_battle_time"].get<int>();
+
+                    data[j["account_id"].get<int>()] = player_data;
+                }
+            }
+
         }
 
    }
