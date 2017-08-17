@@ -1,5 +1,6 @@
 #include <iostream>
 #include <map>
+#include <chrono>
 
 /**  Moje kniznice  */
 #include "./lib/SendCurl.h"
@@ -26,7 +27,7 @@ map<int,tank> tanks;
 
 int page = 1;
 int max_page =  2;
-
+int tankov = 0;
 
 
 void SendPost(int page, nlohmann::json *p_data)
@@ -47,7 +48,7 @@ void SendPost(int page, nlohmann::json *p_data)
     
     /** Ziskaj kolko stranok ma celkom */
     max_page = js["meta"]["page_total"];
-
+    tankov   = js["meta"]["total"];
     *p_data = js["data"];
 }
 
@@ -119,7 +120,7 @@ void UlozData()
     
     string query = insert + data;    
     string truncate = "TRUNCATE encyclopedia_vehicles";
-    string vacuum = "VACUUM FULL ANALYZE";
+    string vacuum = "VACUUM FULL ANALYZE encyclopedia_vehicles";
 
     /** Spojenie do databazy */
     PGconn *conn;
@@ -150,9 +151,18 @@ void UlozData()
 
 int main()
 {
+    chrono::time_point<chrono::high_resolution_clock> start, stop;
+
+    start  = chrono::high_resolution_clock::now();
+    
     ZiskajData();
     UlozData();
 
-    
+    stop = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsed_seconds = stop-start;
+
+    cout << "Celkovy cas \t\t" << elapsed_seconds.count() << endl;
+    cout << "Pocet tankov celkom :" << tankov << endl;
+    cout << "Pocet stranok celkom :" << max_page << endl;
     return 0;
 }
