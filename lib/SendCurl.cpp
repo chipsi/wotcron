@@ -1,5 +1,5 @@
 #include "./SendCurl.h"
-
+#include "./../json/src/json.hpp"
 
 
 SendCurl::SendCurl()
