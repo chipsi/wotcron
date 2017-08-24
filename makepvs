@@ -1,0 +1,14 @@
+LIBFLAGS:=  -lcurl  -lpq -lpthread
+CPPFLAGS:=  --std=c++11 -Wall -I/usr/include/postgresql
+
+pvs: pvs.o SendCurl.o Pgsql.o ./lib/SendCurl.h  ./lib/Pgsql.h
+	$(CXX) -o ./bin/pvs pvs.o ./lib/SendCurl.o  ./lib/Pgsql.o $(LIBFLAGS)
+
+pvs.o:	pvs.cpp
+	$(CXX) -c $(CPPFLAGS) pvs.cpp
+
+SendCurl.o:	./lib/SendCurl.cpp   
+	$(CXX) -c $(CPPFLAGS)  ./lib/SendCurl.cpp  -o ./lib/SendCurl.o
+
+Pgsql.o: ./lib/Pgsql.cpp
+	$(CXX) -c $(CPPFLAGS)  ./lib/Pgsql.cpp  -o ./lib/Pgsql.o

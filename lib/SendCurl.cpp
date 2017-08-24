@@ -1,6 +1,6 @@
 #include "./SendCurl.h"
 #include "./../json/src/json.hpp"
-
+#include <iostream>
 
 SendCurl::SendCurl()
 {
@@ -71,6 +71,8 @@ string SendCurl::SendWGN(string method, string post)
 
 string SendCurl::SendWOT(string method, string post)
 {
+    using namespace std;
+    
     string data;
     // Treba premenit string na char
     string tmp_url = server_wot+method;
@@ -83,12 +85,17 @@ string SendCurl::SendWOT(string method, string post)
 
     data = this->SendRequest(url, postdata);
 
-    if(!this->SkontrolujStatus(data))
-    {
-        data = this->SendRequest(url, postdata);
-        cout << "Cyklus" << endl;
+    using json = nlohmann::json;
+    json js = json::parse(data);
+    
+    string status;
+    
+    status = js["status"].get<string>();
+    if(status.compare("ok") != 0) {
+        throw runtime_error("Status is not OK");
     }
 
+    
     return data;
 
 }
