@@ -274,8 +274,18 @@ void UrobPvsAll(string json_data)
         
           if(all.count(tank_id) == 1 ) // ak najde taky tank_id v kontajnery
           {
-            if(all[tank_id].battles != c["all"]["battles"].get<int>() )
+            if(all[tank_id].battles != c["all"]["battles"].get<int>() ) // Ak su rozdielne bitky tak to zaznamenaj
             {
+                insert_pvs_all_history +=  "("  +account_id+"," 
+                                                + to_string(c["tank_id"].get<int>()) +","
+                                                + to_string(c["all"]["battles"].get<int>() - all[tank_id].battles)+ ","
+                                                + to_string(c["all"]["wins"].get<int>())+ ","
+                                                + to_string(c["all"]["spotted"].get<int>())+ ","
+                                                + to_string(c["all"]["damage_dealt"].get<int>())+ ","
+                                                + to_string(c["all"]["frags"].get<int>())+ ","
+                                                + to_string(c["all"]["dropped_capture_points"].get<int>())+ "),";  
+                
+                
                 cout << c["all"]["battles"].get<int>() - all[tank_id].battles << endl;;
             }
           }
