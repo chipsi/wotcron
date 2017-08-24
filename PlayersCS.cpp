@@ -79,12 +79,29 @@ void SendPost(string clan_id, string *json){
     const char text[] = "&fields=clan_id,members_count,members.account_id,members.account_name,members.joined_at,members.role_i18n&language=cs";
 
     string field(text);
-
+    int x = 1;
+    chrono::seconds dura(3); // pausa 3 sec
+    
     const string method   = "/clans/info/";
 
     string post_data = field  + "&clan_id="+ clan_id;
     SendCurl send;
-    *json = send.SendWGN(method, post_data);
+
+    do{
+        try {
+            *json = send.SendWGN(method, post_data);
+            x = 0;
+        }
+        catch(exception& e) {
+            cout << e.what() << endl;
+            this_thread::sleep_for( dura );
+            x = 1;
+            
+        }
+    }
+    while(x != 0);
+
+    
 
 }
 
@@ -124,14 +141,14 @@ class Spracuj{
 
             /* 3 pripojenia do databazy */
             PGconn *conn1;
-            PGconn *conn2;
+            //PGconn *conn2;
             Pgsql *pg1 = new Pgsql;conn1 = pg1->Get(); delete pg1;
-            Pgsql *pg2 = new Pgsql;conn2 = pg2->Get(); delete pg2;
+            //Pgsql *pg2 = new Pgsql;conn2 = pg2->Get(); delete pg2;
 
 
             /* Prepared statment */
             prepared_select_players_all(conn1);
-            prepared_select_members_role(conn2);
+            prepared_select_members_role(conn1);
 
 
             while(!clan_id[i] == 0)
@@ -142,7 +159,7 @@ class Spracuj{
                 exec_select_players_all( conn1, cid) ;
 
                 // Natiahne do containeru members_role udaje z mojej databazy
-                exec_select_members_role( conn2, cid) ;
+                exec_select_members_role( conn1, cid) ;
 
 
                 // Vyberiem z json iba clanove udaje
@@ -156,7 +173,7 @@ class Spracuj{
                     stat.empty_clan ++;
 
                     // Ak mam nejakych hracov v players_all zmen im clan_id na 0
-                    this->update_players_all_empty(conn2,cid);
+                    this->update_players_all_empty(conn1,cid);
                     cout << "Klan " << cid << " je bez hracov " << endl;
 
                     players_all.clear();fresh.clear();i++;continue;
@@ -165,7 +182,7 @@ class Spracuj{
                 // Ak je iny pocet clenov v tabulke clan_all oprav top
                 if(members_count != (int)players_all.size())
                 {
-                    this->update_clan_all_members_count(conn2, cid, members_count);
+                    this->update_clan_all_members_count(conn1, cid, members_count);
                 }
 
                 // Naplni container fresh udajmi z wargamingu
@@ -174,7 +191,7 @@ class Spracuj{
 
 
                 this->spracuj_players_all(cid,conn1,players_all,fresh);
-                this->spracuj_members_role(cid,conn2,members_role,fresh);
+                this->spracuj_members_role(cid,conn1,members_role,fresh);
 
 
                 i++;
@@ -184,7 +201,7 @@ class Spracuj{
 
 
             }
-            PQfinish(conn1);PQfinish(conn2);
+            PQfinish(conn1);
         }
 
 
