@@ -92,7 +92,8 @@ string SendCurl::SendWOT(string method, string post)
     
     status = js["status"].get<string>();
     if(status.compare("ok") != 0) {
-        throw runtime_error("Status is not OK");
+        string fail = js["error"]["field"].get<string>() + ", " + js["error"]["message"].get<string>() + ": " + js["error"]["value"].get<string>();
+        throw runtime_error(fail);       
     }
 
     
