@@ -53,6 +53,8 @@ int insert_map_count = 0; int insert_map_h_count = 0;
 
 int counter[] = {0,0,0,0,0,0,0,0};
 
+int player_counter; 
+
 /** Zamok pre kriticku oblast json */
 mutex json_lock;
 
@@ -88,7 +90,7 @@ void GetAccountId()
                 {cout << "GetPlayers: " <<  PQresultErrorMessage(result) << endl;}
 
     riadkov     = PQntuples(result);
-
+    player_counter = riadkov;
     for(int i = 0; i < riadkov; i++)
     {
         account_id.push(stoi(PQgetvalue(result,i,0)));
@@ -650,36 +652,26 @@ int Spracuj()
 
 int main()
 {
-    time_t start, stop;
+    time_t start, stop, now;
     time(&start);
     cout << "*********************************"<< endl;
     cout << endl << "Program zacal pracovat: " << ctime(&start) << endl;
     
     VytvorSpojenie();
     GetAccountId();
-
+    cout << "Ma sa spracovat " << player_counter << " hracov" << endl;
     
     while(account_id.size() > 0)
     {
         /** Ziskaj json */
-        using namespace std::chrono;
-        high_resolution_clock::time_point t1 = high_resolution_clock::now();
         GetJson();
-        high_resolution_clock::time_point t2 = high_resolution_clock::now();
-
+    
         /** Spracuj json a uloz do databazy*/
-        high_resolution_clock::time_point d1 = high_resolution_clock::now();
         Spracuj();
-        high_resolution_clock::time_point d2 = high_resolution_clock::now();
-
-        /**
-        duration<double> time_span = duration_cast<duration<double>>(t2 - t1);
-        duration<double> time_spand = duration_cast<duration<double>>(d2 - d1);
-        cout << "Cas json: " << time_span.count() << endl;
-        cout << "Cas spracovania: " << time_spand.count() << endl;
-        cout << "Pocet dotazov: " << counter[0]+counter[1]+counter[2]+counter[3]+counter[4]+counter[5]+counter[6]+counter[7] << endl;
-        cout << all.size() << endl;
-        */
+        
+        /** Kolko uz bolo spracovanych dotazov */
+        time(&now);
+        cout << ctime(&now) << " - Spracovanych dotazov: " << counter[0]+counter[1]+counter[2]+counter[3]+counter[4]+counter[5]+counter[6]+counter[7] << endl;
     }
     
     time(&stop);
