@@ -83,23 +83,30 @@ string SendCurl::SendWOT(string method, string post)
 
     string SendRequest(const char *url, const char *postdata);
 
-    data = this->SendRequest(url, postdata);
-
     using json = nlohmann::json;
     json js;
 
+    data = this->SendRequest(url, postdata);
+    if(!SkontrolujStatus(data))
+    {
+        cout << data << endl;
+    }
     try {
+            
         js = json::parse(data); 
+            
     }
     catch(exception& e) {
-        
         cout << e.what() << endl;
-        cout << js << endl;
+        cout << "Chyba je v :" << data << endl;
+            
     }
-    
+
+
     string status;
     
     status = js["status"].get<string>();
+
     if(status.compare("ok") != 0) {
         string fail = js["error"]["field"].get<string>() + ", " + js["error"]["message"].get<string>() + ": " + js["error"]["value"].get<string>();
         throw runtime_error(fail);       

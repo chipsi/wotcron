@@ -1,3 +1,10 @@
+/*
+*   Program na spracovanie podrobnych statistik hracovych tankov.
+*   Treba ho spustit az po programe PlayersStat, lebo vyberie iba
+*   tie account_id ktore vcera odohrali aspon jednu bitku.
+*
+*/
+
 #include <iostream>
 #include <map>
 #include <chrono>
@@ -56,6 +63,7 @@ int counter[] = {0,0,0,0,0,0,0,0};
 int player_counter; 
 
 /** Zamok pre kriticku oblast json */
+mutex id_lock;
 mutex json_lock;
 
 /** Vytvor jedno spojenie do databazy */
@@ -83,8 +91,11 @@ void VacuumAnalyze()
 /** Nahraj account_id do fronty */
 void GetAccountId() 
 {
+    /** Vyberiem iba hracov ktory vcera odohrali aspon jednu bitku v randome */
+    
     PGresult *result;
-    string query    = "SELECT account_id FROM cz_players";
+    string query    = "SELECT account_id FROM players_stat_all_history WHERE date = current_date - interval '1 days ' AND battles > 0";
+    //string query = "SELECT account_id FROM players_all LIMIT 500";
     result          = PQexec(conn, query.c_str());
          if (PQresultStatus(result) != PGRES_TUPLES_OK)
                 {cout << "GetPlayers: " <<  PQresultErrorMessage(result) << endl;}
@@ -107,10 +118,10 @@ void GetDataFromSever()
 
     if(account_id.size() > 0)
     {
-        json_lock.lock();
+        id_lock.lock();
         int id = account_id.front();
         account_id.pop();
-        json_lock.unlock();
+        id_lock.unlock();
 
         string post_data = field+"&account_id="+to_string(id);
         
@@ -131,8 +142,10 @@ void GetDataFromSever()
 
         json_lock.lock();
         json_map[id] = json;
+        json.clear();
         json_lock.unlock();
 
+        
     }
 }
 
@@ -179,7 +192,7 @@ void GetDatabaseData()
     PGresult *result;
     tank_data tdata;
     map<int,string>::iterator it;
-    string json;
+    string json1,json2,json3,json4;
 
     /** Dotazy do tabuliek pvs_all Random */
     string insert_pvs_all=""; string *ipa; ipa = &insert_pvs_all;
@@ -272,15 +285,16 @@ void GetDatabaseData()
         }
         PQclear(result);
         
-        json = it->second;
+        json1 = json2 = json3 = json4 = it->second;
         
-        UrobPvsAll(json, ipa, ipah, upa);
-        UrobPvsskirmish(json, ips, ipsh, ups);
-        UrobPvsdefense(json, ipd, ipdh, upd);
-        UrobPvsMap(json, ipm, ipmh, upm);
+
+        UrobPvsAll(json1, ipa, ipah, upa);
+        UrobPvsskirmish(json2, ips, ipsh, ups);
+        UrobPvsdefense(json3, ipd, ipdh, upd);
+        UrobPvsMap(json4, ipm, ipmh, upm);
        
         all.clear();skirmish.clear();globalmap.clear();defense.clear();
-        json_map.clear();json.clear();
+        json_map.clear();json1.clear();json2.clear();json3.clear();json4.clear();
     }
    
     /** Odosielanie pripravenych dotazov */
@@ -379,12 +393,12 @@ void UrobPvsAll(string json_data,string *insert_pvs_all, string *insert_pvs_all_
     json js,j,c;
     string account_id;
     try {
-        js = json::parse(json_data); json_data.clear();
+        js = json::parse(json_data); //json_data.clear();
     }
     catch(exception& e) {
         
         cout << e.what() << endl;
-        cout << js << endl;
+        cout << json_data << endl;
     }
 
     js      = js["data"];
@@ -393,8 +407,8 @@ void UrobPvsAll(string json_data,string *insert_pvs_all, string *insert_pvs_all_
     {
         account_id = x.key();
         j = x.value();
-    }   
-       
+    }  
+          
     for (auto& y : json::iterator_wrapper(j))
     {
           c = y.value();  
@@ -444,6 +458,7 @@ void UrobPvsAll(string json_data,string *insert_pvs_all, string *insert_pvs_all_
           
     }
     
+    
 }
 
 void UrobPvsskirmish(string json_data,string *insert_pvs_skirmish, string *insert_pvs_skirmish_history, string *update_pvs_skirmish)
@@ -454,12 +469,12 @@ void UrobPvsskirmish(string json_data,string *insert_pvs_skirmish, string *inser
     string account_id;
     
     try {
-        js = json::parse(json_data); json_data.clear();
+        js = json::parse(json_data); //json_data.clear();
     }
     catch(exception& e) {
         
         cout << e.what() << endl;
-        cout << js << endl;
+        cout << json_data << endl;
     }
 
     js      = js["data"];
@@ -469,7 +484,7 @@ void UrobPvsskirmish(string json_data,string *insert_pvs_skirmish, string *inser
         account_id = x.key();
         j = x.value();
     }   
-       
+        
     for (auto& y : json::iterator_wrapper(j))
     {
           c = y.value();  
@@ -529,12 +544,12 @@ void UrobPvsdefense(string json_data,string *insert_pvs_defense, string *insert_
     string account_id;
 
     try {
-        js = json::parse(json_data); json_data.clear();
+        js = json::parse(json_data); //json_data.clear();
     }
     catch(exception& e) {
         
         cout << e.what() << endl;
-        cout << js << endl;
+        cout << json_data << endl;
     }
 
     js      = js["data"];
@@ -543,7 +558,7 @@ void UrobPvsdefense(string json_data,string *insert_pvs_defense, string *insert_
         account_id = x.key();
         j = x.value();
     }   
-       
+    
     for (auto& y : json::iterator_wrapper(j))
     {
           c = y.value();  
@@ -594,6 +609,7 @@ void UrobPvsdefense(string json_data,string *insert_pvs_defense, string *insert_
           }
           
     }
+   
     
 }
 
@@ -605,12 +621,12 @@ void UrobPvsMap(string json_data,string *insert_pvs_globalmap, string *insert_pv
     json js,j,c;
     string account_id;
     try {
-        js = json::parse(json_data); json_data.clear();
+        js = json::parse(json_data); //json_data.clear();
     }
     catch(exception& e) {
         
         cout << e.what() << endl;
-        cout << js << endl;
+        cout << json_data << endl;
     }
 
     js      = js["data"];
@@ -620,7 +636,7 @@ void UrobPvsMap(string json_data,string *insert_pvs_globalmap, string *insert_pv
         account_id = x.key();
         j = x.value();
     }   
-       
+      
     for (auto& y : json::iterator_wrapper(j))
     {
           c = y.value();  
@@ -669,7 +685,7 @@ void UrobPvsMap(string json_data,string *insert_pvs_globalmap, string *insert_pv
           }
           
     }
-    
+        
 }
 
 int Spracuj()
