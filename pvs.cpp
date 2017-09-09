@@ -376,9 +376,16 @@ void UrobPvsAll(string json_data,string *insert_pvs_all, string *insert_pvs_all_
        
     using json = nlohmann::json;
     
-    json j,c;
+    json js,j,c;
     string account_id;
-    json js = json::parse(json_data); json_data.clear();
+    try {
+        js = json::parse(json_data); json_data.clear();
+    }
+    catch(exception& e) {
+        
+        cout << e.what() << endl;
+        cout << js << endl;
+    }
 
     js      = js["data"];
     
@@ -443,9 +450,17 @@ void UrobPvsskirmish(string json_data,string *insert_pvs_skirmish, string *inser
 {
        
     using json = nlohmann::json;
-    json j,c;
+    json js,j,c;
     string account_id;
-    json js = json::parse(json_data); json_data.clear();
+    
+    try {
+        js = json::parse(json_data); json_data.clear();
+    }
+    catch(exception& e) {
+        
+        cout << e.what() << endl;
+        cout << js << endl;
+    }
 
     js      = js["data"];
     
@@ -510,9 +525,17 @@ void UrobPvsdefense(string json_data,string *insert_pvs_defense, string *insert_
 {
        
     using json = nlohmann::json;
-    json j,c;
+    json js,j,c;
     string account_id;
-    json js = json::parse(json_data); json_data.clear();
+
+    try {
+        js = json::parse(json_data); json_data.clear();
+    }
+    catch(exception& e) {
+        
+        cout << e.what() << endl;
+        cout << js << endl;
+    }
 
     js      = js["data"];
     for (auto& x : json::iterator_wrapper(js))
@@ -579,9 +602,16 @@ void UrobPvsMap(string json_data,string *insert_pvs_globalmap, string *insert_pv
        
     using json = nlohmann::json;
     
-    json j,c;
+    json js,j,c;
     string account_id;
-    json js = json::parse(json_data); json_data.clear();
+    try {
+        js = json::parse(json_data); json_data.clear();
+    }
+    catch(exception& e) {
+        
+        cout << e.what() << endl;
+        cout << js << endl;
+    }
 
     js      = js["data"];
     
