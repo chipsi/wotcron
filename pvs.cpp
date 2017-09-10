@@ -10,6 +10,8 @@
 #include <chrono>
 #include <mutex>
 #include <thread>
+#include <fstream>
+#include <fstream>
 
 /** Kontainer **/
 #include <queue>
@@ -19,6 +21,7 @@
 #include "./lib/SendCurl.h"
 #include "./lib/Pgsql.h"
 #include "./json/src/json.hpp"
+
 
 
 /** Co budem pozadovat zo serveru */
@@ -94,9 +97,9 @@ void GetAccountId()
     /** Vyberiem iba hracov ktory vcera odohrali aspon jednu bitku v randome */
     
     PGresult *result;
-    string query    = "SELECT account_id FROM players_stat_all_history WHERE date = current_date - interval '1 days ' AND battles > 0";
-    //string query = "SELECT account_id FROM players_all LIMIT 500";
-    result          = PQexec(conn, query.c_str());
+    //const char *query = "SELECT account_id FROM players_stat_all_history WHERE date = current_date - interval '1 days ' AND battles > 0";
+    const char *query  = "SELECT account_id FROM players_all LIMIT 500";
+    result          = PQexec(conn, query);
          if (PQresultStatus(result) != PGRES_TUPLES_OK)
                 {cout << "GetPlayers: " <<  PQresultErrorMessage(result) << endl;}
 
@@ -109,13 +112,37 @@ void GetAccountId()
     }
     PQclear(result);
 }
+void UlozSubor(string file_name, const char *json_string)
+{
+    fstream file;
+    file.open ("./tmp/"+file_name, ios::trunc | ios::out);
+    file << json_string;
+    file.close();
+}
 
-void GetDataFromSever()
+string CitajSubor(int i)
+{
+    string data;    
+    fstream file;
+    string filename = "./tmp/pvs_"+ to_string(i) + ".json";
+    file.open(filename, ios::in);
+
+    if(file.is_open())
+    {
+       file >> data;
+    }
+    
+    return data;
+}
+
+/** Ziskaj data zo servera a uloz ich do docasneho suboru */
+void GetDataFromSever(int number)
 {       
-    string json;
+    string json_string;
     int x = 1;
+    
     chrono::seconds dura(3); // pausa 3 sec
-
+    
     if(account_id.size() > 0)
     {
         id_lock.lock();
@@ -124,11 +151,11 @@ void GetDataFromSever()
         id_lock.unlock();
 
         string post_data = field+"&account_id="+to_string(id);
-        
+       
         SendCurl send;
         do{
             try {
-                json = send.SendWOT(method, post_data);
+                json_string = send.SendWOT(method, post_data);
                 x = 0;
             }
             catch(exception& e) {
@@ -139,31 +166,36 @@ void GetDataFromSever()
             }
         }
         while(x != 0);
-
-        json_lock.lock();
-        json_map[id] = json;
-        json.clear();
-        json_lock.unlock();
-
         
+        string file_name = "pvs_"+to_string(number)+".json";
+        const char *data = json_string.c_str();
+        UlozSubor(file_name, data);
+                
+        json_string.clear();
     }
 }
 
-/** Ziskanie surovych dat a ulozenie do kontainera, 10 hracov naraz */
+/** Ziskanie surovych dat a ulozenie do suboru, 15 hracov naraz */
 void GetJson()
 {
-        thread t1(GetDataFromSever);
-        thread t2(GetDataFromSever);
-        thread t3(GetDataFromSever);
-        thread t4(GetDataFromSever);
-        thread t5(GetDataFromSever);
-        thread t6(GetDataFromSever);
-        thread t7(GetDataFromSever);
-        thread t8(GetDataFromSever);
-        thread t9(GetDataFromSever);
-        thread t10(GetDataFromSever);
-    
-        t1.join();t2.join();t3.join();t4.join();t5.join();t6.join();t7.join();t8.join();t9.join();t10.join();
+        
+        thread t1(GetDataFromSever,1);
+        thread t2(GetDataFromSever,2);
+        thread t3(GetDataFromSever,3);
+        thread t4(GetDataFromSever,4);
+        thread t5(GetDataFromSever,5);
+        thread t6(GetDataFromSever,6);
+        thread t7(GetDataFromSever,7);
+        thread t8(GetDataFromSever,8);
+        thread t9(GetDataFromSever,9);
+        thread t10(GetDataFromSever,10);
+        thread t11(GetDataFromSever,11);
+        thread t12(GetDataFromSever,12);
+        thread t13(GetDataFromSever,13);
+        thread t14(GetDataFromSever,14);
+        thread t15(GetDataFromSever,15);
+        
+        t1.join();t2.join();t3.join();t4.join();t5.join();t6.join();t7.join();t8.join();t9.join();t10.join();t11.join();t12.join();t13.join();t14.join();t15.join();
 }
 
 PGresult *Database(int id, string table)
@@ -178,22 +210,20 @@ PGresult *Database(int id, string table)
     return result;
 }
 
-void GetDatabaseData()
+void GetDatabaseData(string json_data)
 {
     PGresult *Database(int id, string table);
-    void UrobPvsAll(string json, string *i, string *ih, string *u);
-    void UrobPvsskirmish(string json, string *i, string *ih, string *u);
-    void UrobPvsdefense(string json, string *i, string *ih, string *u);
-    void UrobPvsMap(string json, string *i, string *ih, string *u);
+    void UrobPvsAll(string json1, string *i, string *ih, string *u);
+    void UrobPvsskirmish(string json2, string *i, string *ih, string *u);
+    void UrobPvsdefense(string json3, string *i, string *ih, string *u);
+    void UrobPvsMap(string json4, string *i, string *ih, string *u);
 
     void InsertInTable(string *data, string table);
     void UpdateTable(string *data, string table);
     
     PGresult *result;
     tank_data tdata;
-    map<int,string>::iterator it;
-    string json1,json2,json3,json4;
-
+    
     /** Dotazy do tabuliek pvs_all Random */
     string insert_pvs_all=""; string *ipa; ipa = &insert_pvs_all;
     string insert_pvs_all_history = ""; string *ipah; ipah = &insert_pvs_all_history;
@@ -213,59 +243,78 @@ void GetDatabaseData()
 
     int id,riadkov,i;
 
-    for(it = json_map.begin(); it != json_map.end(); it++ ) 
+    using json = nlohmann::json;
+    json js,j;
+
+    try {
+        js = json::parse(json_data);
+    }
+    catch(json::parse_error& e)
     {
-        id = it->first;
+        cout << "Parser 2: " << e.what() << endl;
+        cout << js << endl;
+    }
 
-        /** Tabulka pvs_all */
-        result = Database(id, "pvs_all");
-        riadkov = PQntuples(result);
+    js = js["data"];
+    
+    /** Ziskanie account_id */
+    for (auto& x : json::iterator_wrapper(js))
+    {
+        id = stoi(x.key());
+    } 
+    js.clear();
+        
+    /** Ziskanie a ulozenie data z databazy */
+    
+    /** Tabulka pvs_all */
+    result = Database(id, "pvs_all");
+    riadkov = PQntuples(result);
 
-        for(i = 0; i < riadkov; i++) {
-            tdata.battles   = stoi(PQgetvalue(result,i,2));
-            tdata.wins      = stoi(PQgetvalue(result,i,3));
-            tdata.spot      = stoi(PQgetvalue(result,i,4));
-            tdata.dmg       = stoi(PQgetvalue(result,i,5));
-            tdata.frags     = stoi(PQgetvalue(result,i,6));
-            tdata.dcp       = stoi(PQgetvalue(result,i,7));
+    for(i = 0; i < riadkov; i++) {
+        tdata.battles   = stoi(PQgetvalue(result,i,2));
+        tdata.wins      = stoi(PQgetvalue(result,i,3));
+        tdata.spot      = stoi(PQgetvalue(result,i,4));
+        tdata.dmg       = stoi(PQgetvalue(result,i,5));
+        tdata.frags     = stoi(PQgetvalue(result,i,6));
+        tdata.dcp       = stoi(PQgetvalue(result,i,7));
 
-            all[stoi(PQgetvalue(result,i,1))]  = tdata;
-            
-        }
-        PQclear(result);
+        all[stoi(PQgetvalue(result,i,1))]  = tdata;
+        
+    }
+    PQclear(result);
 
-        /** Tabulka pvs_skirmish */
-        result = Database(id, "pvs_skirmish");
-        riadkov = PQntuples(result);
+    /** Tabulka pvs_skirmish */
+    result = Database(id, "pvs_skirmish");
+    riadkov = PQntuples(result);
 
-        for(i = 0; i < riadkov; i++) {
-            tdata.battles   = stoi(PQgetvalue(result,i,2));
-            tdata.wins      = stoi(PQgetvalue(result,i,3));
-            tdata.spot      = stoi(PQgetvalue(result,i,4));
-            tdata.dmg       = stoi(PQgetvalue(result,i,5));
-            tdata.frags     = stoi(PQgetvalue(result,i,6));
-            tdata.dcp       = stoi(PQgetvalue(result,i,7));
+    for(i = 0; i < riadkov; i++) {
+        tdata.battles   = stoi(PQgetvalue(result,i,2));
+        tdata.wins      = stoi(PQgetvalue(result,i,3));
+        tdata.spot      = stoi(PQgetvalue(result,i,4));
+        tdata.dmg       = stoi(PQgetvalue(result,i,5));
+        tdata.frags     = stoi(PQgetvalue(result,i,6));
+        tdata.dcp       = stoi(PQgetvalue(result,i,7));
 
-            skirmish[stoi(PQgetvalue(result,i,1))]  = tdata;
-            
-        }
-        PQclear(result);
+        skirmish[stoi(PQgetvalue(result,i,1))]  = tdata;
+        
+    }
+    PQclear(result);
 
-        /** Tabulka pvs_defense */
-        result = Database(id, "pvs_defense");
-        riadkov = PQntuples(result);
+    /** Tabulka pvs_defense */
+    result = Database(id, "pvs_defense");
+    riadkov = PQntuples(result);
 
-        for(i = 0; i < riadkov; i++) {
-            tdata.battles   = stoi(PQgetvalue(result,i,2));
-            tdata.wins      = stoi(PQgetvalue(result,i,3));
-            tdata.spot      = stoi(PQgetvalue(result,i,4));
-            tdata.dmg       = stoi(PQgetvalue(result,i,5));
-            tdata.frags     = stoi(PQgetvalue(result,i,6));
-            tdata.dcp       = stoi(PQgetvalue(result,i,7));
+    for(i = 0; i < riadkov; i++) {
+        tdata.battles   = stoi(PQgetvalue(result,i,2));
+        tdata.wins      = stoi(PQgetvalue(result,i,3));
+        tdata.spot      = stoi(PQgetvalue(result,i,4));
+        tdata.dmg       = stoi(PQgetvalue(result,i,5));
+        tdata.frags     = stoi(PQgetvalue(result,i,6));
+        tdata.dcp       = stoi(PQgetvalue(result,i,7));
 
-            defense[stoi(PQgetvalue(result,i,1))]  = tdata;
-            
-        }
+        defense[stoi(PQgetvalue(result,i,1))]  = tdata;
+        
+    }
         PQclear(result);
 
         /** Tabulka pvs_globalmap */
@@ -273,29 +322,28 @@ void GetDatabaseData()
         riadkov = PQntuples(result);
 
         for(i = 0; i < riadkov; i++) {
-            tdata.battles   = stoi(PQgetvalue(result,i,2));
-            tdata.wins      = stoi(PQgetvalue(result,i,3));
-            tdata.spot      = stoi(PQgetvalue(result,i,4));
-            tdata.dmg       = stoi(PQgetvalue(result,i,5));
-            tdata.frags     = stoi(PQgetvalue(result,i,6));
-            tdata.dcp       = stoi(PQgetvalue(result,i,7));
+        tdata.battles   = stoi(PQgetvalue(result,i,2));
+        tdata.wins      = stoi(PQgetvalue(result,i,3));
+        tdata.spot      = stoi(PQgetvalue(result,i,4));
+        tdata.dmg       = stoi(PQgetvalue(result,i,5));
+        tdata.frags     = stoi(PQgetvalue(result,i,6));
+        tdata.dcp       = stoi(PQgetvalue(result,i,7));
 
-            globalmap[stoi(PQgetvalue(result,i,1))]  = tdata;
+        globalmap[stoi(PQgetvalue(result,i,1))]  = tdata;
             
         }
         PQclear(result);
         
-        json1 = json2 = json3 = json4 = it->second;
         
 
-        UrobPvsAll(json1, ipa, ipah, upa);
-        UrobPvsskirmish(json2, ips, ipsh, ups);
-        UrobPvsdefense(json3, ipd, ipdh, upd);
-        UrobPvsMap(json4, ipm, ipmh, upm);
+        UrobPvsAll(json_data, ipa, ipah, upa);
+        UrobPvsskirmish(json_data, ips, ipsh, ups);
+        UrobPvsdefense(json_data, ipd, ipdh, upd);
+        UrobPvsMap(json_data, ipm, ipmh, upm);
        
         all.clear();skirmish.clear();globalmap.clear();defense.clear();
-        json_map.clear();json1.clear();json2.clear();json3.clear();json4.clear();
-    }
+        json_data.clear();
+    
    
     /** Odosielanie pripravenych dotazov */
     
@@ -393,20 +441,20 @@ void UrobPvsAll(string json_data,string *insert_pvs_all, string *insert_pvs_all_
     json js,j,c;
     string account_id;
     try {
-        js = json::parse(json_data); //json_data.clear();
+        js = json::parse(json_data); //json_data.clear();        
     }
-    catch(exception& e) {
-        
-        cout << e.what() << endl;
-        cout << json_data << endl;
+    catch(json::parse_error& e) {
+        cout << "Parser UrobPvsAll: " << e.what() << endl;
+        cout << js << endl;
     }
 
-    js      = js["data"];
+    js = js["data"];
     
     for (auto& x : json::iterator_wrapper(js))
     {
         account_id = x.key();
-        j = x.value();
+        j = x.value();       
+        
     }  
           
     for (auto& y : json::iterator_wrapper(j))
@@ -458,7 +506,7 @@ void UrobPvsAll(string json_data,string *insert_pvs_all, string *insert_pvs_all_
           
     }
     
-    
+    js.clear(); j.clear(); c.clear();
 }
 
 void UrobPvsskirmish(string json_data,string *insert_pvs_skirmish, string *insert_pvs_skirmish_history, string *update_pvs_skirmish)
@@ -469,12 +517,13 @@ void UrobPvsskirmish(string json_data,string *insert_pvs_skirmish, string *inser
     string account_id;
     
     try {
+        json_lock.lock();
         js = json::parse(json_data); //json_data.clear();
+        json_lock.unlock();
     }
-    catch(exception& e) {
-        
-        cout << e.what() << endl;
-        cout << json_data << endl;
+    catch(json::parse_error& e) {
+        cout << "Parser UrobPvsSkirmish: " << e.what() << endl;
+        cout << js << endl;
     }
 
     js      = js["data"];
@@ -533,7 +582,7 @@ void UrobPvsskirmish(string json_data,string *insert_pvs_skirmish, string *inser
           }
           
     }
-    
+    js.clear(); j.clear(); c.clear();
 }
 
 void UrobPvsdefense(string json_data,string *insert_pvs_defense, string *insert_pvs_defense_history, string *update_pvs_defense)
@@ -543,13 +592,12 @@ void UrobPvsdefense(string json_data,string *insert_pvs_defense, string *insert_
     json js,j,c;
     string account_id;
 
-    try {
-        js = json::parse(json_data); //json_data.clear();
+    try {        
+        js = json::parse(json_data);        
     }
-    catch(exception& e) {
-        
-        cout << e.what() << endl;
-        cout << json_data << endl;
+    catch(json::parse_error& e) {
+        cout << "Parser UrobPvsAll: " << e.what() << endl;
+        cout << js << endl;
     }
 
     js      = js["data"];
@@ -610,6 +658,7 @@ void UrobPvsdefense(string json_data,string *insert_pvs_defense, string *insert_
           
     }
    
+    js.clear(); j.clear(); c.clear(); json_data.clear();
     
 }
 
@@ -620,13 +669,12 @@ void UrobPvsMap(string json_data,string *insert_pvs_globalmap, string *insert_pv
     
     json js,j,c;
     string account_id;
-    try {
-        js = json::parse(json_data); //json_data.clear();
+    try {        
+        js = json::parse(json_data);        
     }
-    catch(exception& e) {
-        
-        cout << e.what() << endl;
-        cout << json_data << endl;
+    catch(json::parse_error& e) {
+        cout << "Parser UrobPvsMap: " << e.what() << endl;
+        cout << js << endl;
     }
 
     js      = js["data"];
@@ -685,12 +733,21 @@ void UrobPvsMap(string json_data,string *insert_pvs_globalmap, string *insert_pv
           }
           
     }
-        
+    js.clear(); j.clear(); c.clear(); json_data.clear(); 
 }
 
 int Spracuj()
 {   
-    GetDatabaseData();
+    int i;
+    string json_data;
+
+    for(i = 1; i < 16; i ++)
+    {
+        json_data = CitajSubor(i);
+        GetDatabaseData(json_data);
+        json_data.clear();
+
+    }
 
     return 0;
 }   
@@ -711,10 +768,8 @@ int main()
     {
         /** Ziskaj json */
         GetJson();
-    
         /** Spracuj json a uloz do databazy*/
         Spracuj();
-        
         /** Kolko uz bolo spracovanych dotazov */
         time(&now);
         cout << ctime(&now) << " - Spracovanych dotazov: " << counter[0]+counter[1]+counter[2]+counter[3]+counter[4]+counter[5]+counter[6]+counter[7] << endl;

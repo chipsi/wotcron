@@ -77,34 +77,28 @@ string SendCurl::SendWOT(string method, string post)
     // Treba premenit string na char
     string tmp_url = server_wot+method;
     const char *url = tmp_url.c_str();
-
+    
     string tmp_post = api_id+post;
     const char *postdata = tmp_post.c_str();
-
+    
     string SendRequest(const char *url, const char *postdata);
 
+    data = this->SendRequest(url, postdata);
+    tmp_post.clear(); tmp_url.clear();
+
+    
     using json = nlohmann::json;
     json js;
-
-    data = this->SendRequest(url, postdata);
-    if(!SkontrolujStatus(data))
-    {
-        cout << data << endl;
+    try{
+        js = json::parse(data);
     }
-    try {
-            
-        js = json::parse(data); 
-            
+    catch(json::parse_error& e)  {
+        cout << "Parser in SendCurl: " << e.what() << endl;
+        cout << js << endl;
     }
-    catch(exception& e) {
-        cout << e.what() << endl;
-        cout << "Chyba je v :" << data << endl;
-            
-    }
-
 
     string status;
-    
+  
     status = js["status"].get<string>();
 
     if(status.compare("ok") != 0) {
@@ -112,6 +106,7 @@ string SendCurl::SendWOT(string method, string post)
         throw runtime_error(fail);       
     }
     js.clear();
+    
     
     return data;
 
