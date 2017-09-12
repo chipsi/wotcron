@@ -97,8 +97,8 @@ void GetAccountId()
     /** Vyberiem iba hracov ktory vcera odohrali aspon jednu bitku v randome */
     
     PGresult *result;
-    //const char *query = "SELECT account_id FROM players_stat_all_history WHERE date = current_date - interval '1 days ' AND battles > 0";
-    const char *query  = "SELECT account_id FROM players_all LIMIT 500";
+    const char *query = "SELECT account_id FROM players_stat_all_history WHERE date = current_date - interval '1 days ' AND battles > 0";
+    //const char *query  = "SELECT account_id FROM players_all LIMIT 500";
     result          = PQexec(conn, query);
          if (PQresultStatus(result) != PGRES_TUPLES_OK)
                 {cout << "GetPlayers: " <<  PQresultErrorMessage(result) << endl;}
