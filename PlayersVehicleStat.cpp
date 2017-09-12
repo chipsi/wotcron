@@ -61,7 +61,7 @@ class Players
             const char *query = "SELECT account_id FROM players_stat_all_history WHERE date = current_date - interval '1 days ' AND battles > 0";
 
             //string query = "SELECT count(*) FROM cz_players";
-            result = PQexec(this->conn, query.c_str());
+            result = PQexec(this->conn, query);
             res = PQgetvalue(result,0,0); 
             PQclear(result);
             i   = stoi(res); 
@@ -75,7 +75,7 @@ class Players
 
             const char *query = "SELECT account_id FROM players_stat_all_history WHERE date = current_date - interval '1 days ' AND battles > 0";
             //string query    = "SELECT account_id FROM cz_players";
-            result          = PQexec(this->conn, query.c_str());
+            result          = PQexec(this->conn, query);
                  if (PQresultStatus(result) != PGRES_TUPLES_OK)
                         {cout << "GetPlayers: " <<  PQresultErrorMessage(result) << endl;}
 
