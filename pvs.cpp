@@ -88,7 +88,16 @@ void VacuumAnalyze()
         PQsendQuery(conn,query.c_str());
     query = "VACUUM ANALYZE pvs_all_05";
         PQsendQuery(conn,query.c_str());
-    
+    query = "VACUUM ANALYZE pvs_skirmish";
+        PQsendQuery(conn,query.c_str());        
+    query = "VACUUM ANALYZE pvs_skirmish_history";
+        PQsendQuery(conn,query.c_str());
+    query = "VACUUM ANALYZE pvs_defense";
+        PQsendQuery(conn,query.c_str());
+    query = "VACUUM ANALYZE pvs_defense_history";
+        PQsendQuery(conn,query.c_str());    
+        
+    cout << "Prebehlo vacuum a analyze " << endl << endl;
 }
 
 /** Nahraj account_id do fronty */
@@ -114,7 +123,7 @@ void GetAccountId()
 }
 void UlozSubor(string file_name, const char *json_string)
 {
-    fstream file;
+    ofstream file;
     file.open ("./tmp/"+file_name, ios::trunc | ios::out);
     file << json_string;
     file.close();
@@ -123,7 +132,7 @@ void UlozSubor(string file_name, const char *json_string)
 string CitajSubor(int i)
 {
     string data;    
-    fstream file;
+    ifstream file;
     string filename = "./tmp/pvs_"+ to_string(i) + ".json";
     file.open(filename, ios::in);
 
@@ -245,6 +254,7 @@ void GetDatabaseData(string json_data)
 
     using json = nlohmann::json;
     json js,j;
+  
 
     try {
         js = json::parse(json_data);
@@ -445,7 +455,7 @@ void UrobPvsAll(string json_data,string *insert_pvs_all, string *insert_pvs_all_
     }
     catch(json::parse_error& e) {
         cout << "Parser UrobPvsAll: " << e.what() << endl;
-        cout << js << endl;
+        //cout << js << endl;
     }
 
     js = js["data"];
@@ -506,7 +516,7 @@ void UrobPvsAll(string json_data,string *insert_pvs_all, string *insert_pvs_all_
           
     }
     
-    js.clear(); j.clear(); c.clear();
+    js.clear(); j.clear(); c.clear(); json_data.clear();  
 }
 
 void UrobPvsskirmish(string json_data,string *insert_pvs_skirmish, string *insert_pvs_skirmish_history, string *update_pvs_skirmish)
@@ -516,14 +526,12 @@ void UrobPvsskirmish(string json_data,string *insert_pvs_skirmish, string *inser
     json js,j,c;
     string account_id;
     
-    try {
-        json_lock.lock();
-        js = json::parse(json_data); //json_data.clear();
-        json_lock.unlock();
+    try {        
+        js = json::parse(json_data);      
     }
     catch(json::parse_error& e) {
         cout << "Parser UrobPvsSkirmish: " << e.what() << endl;
-        cout << js << endl;
+        //cout << js << endl;
     }
 
     js      = js["data"];
@@ -582,7 +590,7 @@ void UrobPvsskirmish(string json_data,string *insert_pvs_skirmish, string *inser
           }
           
     }
-    js.clear(); j.clear(); c.clear();
+    js.clear(); j.clear(); c.clear(); json_data.clear();  
 }
 
 void UrobPvsdefense(string json_data,string *insert_pvs_defense, string *insert_pvs_defense_history, string *update_pvs_defense)
@@ -597,7 +605,7 @@ void UrobPvsdefense(string json_data,string *insert_pvs_defense, string *insert_
     }
     catch(json::parse_error& e) {
         cout << "Parser UrobPvsAll: " << e.what() << endl;
-        cout << js << endl;
+        //cout << js << endl;
     }
 
     js      = js["data"];
@@ -674,7 +682,7 @@ void UrobPvsMap(string json_data,string *insert_pvs_globalmap, string *insert_pv
     }
     catch(json::parse_error& e) {
         cout << "Parser UrobPvsMap: " << e.what() << endl;
-        cout << js << endl;
+        //cout << js << endl;
     }
 
     js      = js["data"];
@@ -757,11 +765,19 @@ int main()
 {
     time_t start, stop, now;
     time(&start);
+    
     cout << "*********************************"<< endl;
     cout << endl << "Program zacal pracovat: " << ctime(&start) << endl;
     
+    /** Vytvor jedno spojenie do databazy */
     VytvorSpojenie();
+
+    /** Vacuum a analyz tabulike */
+    VacuumAnalyze();
+
+    /** Ziskanie relevantnych account_id */
     GetAccountId();
+
     cout << "Ma sa spracovat " << player_counter << " hracov" << endl;
     
     while(account_id.size() > 0)
