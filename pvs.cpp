@@ -785,13 +785,11 @@ int main()
     
     while(account_id.size() > 0)
     {
-        
         /** Ziskaj json */
         GetJson();
-        break;
+        
         /** Spracuj json a uloz do databazy*/
-        Spracuj();
-        break;
+        Spracuj();        
     }
     
     time(&stop);
