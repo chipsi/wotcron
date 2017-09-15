@@ -62,6 +62,7 @@ int insert_defense_count = 0;   int insert_defense_h_count = 0;
 int insert_map_count = 0; int insert_map_h_count = 0;
 
 int counter[] = {0,0,0,0,0,0,0,0};
+int fails = 0;
 
 int player_counter; 
 
@@ -107,7 +108,7 @@ void GetAccountId()
     
     PGresult *result;
     const char *query = "SELECT account_id FROM players_stat_all_history WHERE date = current_date - interval '1 days ' AND battles > 0";
-    //const char *query  = "SELECT account_id FROM players_all LIMIT 500";
+    //const char *query  = "SELECT account_id FROM players_all LIMIT 1500";
     result          = PQexec(conn, query);
          if (PQresultStatus(result) != PGRES_TUPLES_OK)
                 {cout << "GetPlayers: " <<  PQresultErrorMessage(result) << endl;}
@@ -155,17 +156,20 @@ void GetDataFromSever(int number)
     if(account_id.size() > 0)
     {
         id_lock.lock();
-        int id = account_id.front();
-        account_id.pop();
+            int id = account_id.front();
+            account_id.pop();            
         id_lock.unlock();
 
         string post_data = field+"&account_id="+to_string(id);
        
+        
+
         SendCurl send;
         do{
             try {
                 json_string = send.SendWOT(method, post_data);
                 x = 0;
+                player_counter -- ;
             }
             catch(exception& e) {
                 cout << e.what() << endl;
@@ -176,10 +180,10 @@ void GetDataFromSever(int number)
         }
         while(x != 0);
         
+        /** Ulozenie json do docasneho suboru */
         string file_name = "pvs_"+to_string(number)+".json";
         const char *data = json_string.c_str();
         UlozSubor(file_name, data);
-                
         json_string.clear();
     }
 }
@@ -203,8 +207,8 @@ void GetJson()
         thread t13(GetDataFromSever,13);
         thread t14(GetDataFromSever,14);
         thread t15(GetDataFromSever,15);
-        
         t1.join();t2.join();t3.join();t4.join();t5.join();t6.join();t7.join();t8.join();t9.join();t10.join();t11.join();t12.join();t13.join();t14.join();t15.join();
+        
 }
 
 PGresult *Database(int id, string table)
@@ -215,7 +219,7 @@ PGresult *Database(int id, string table)
     result          = PQexec(conn, query.c_str());
     if (PQresultStatus(result) != PGRES_TUPLES_OK)
           {cout << "Data z tabulku "+table+" neprisli" <<  PQresultErrorMessage(result) << endl;}
-
+    
     return result;
 }
 
@@ -262,7 +266,7 @@ void GetDatabaseData(string json_data)
     catch(json::parse_error& e)
     {
         cout << "Parser 2: " << e.what() << endl;
-        cout << js << endl;
+        fails ++;
     }
 
     js = js["data"];
@@ -455,7 +459,7 @@ void UrobPvsAll(string json_data,string *insert_pvs_all, string *insert_pvs_all_
     }
     catch(json::parse_error& e) {
         cout << "Parser UrobPvsAll: " << e.what() << endl;
-        //cout << js << endl;
+        fails ++;
     }
 
     js = js["data"];
@@ -531,7 +535,7 @@ void UrobPvsskirmish(string json_data,string *insert_pvs_skirmish, string *inser
     }
     catch(json::parse_error& e) {
         cout << "Parser UrobPvsSkirmish: " << e.what() << endl;
-        //cout << js << endl;
+        fails ++ ;
     }
 
     js      = js["data"];
@@ -605,7 +609,7 @@ void UrobPvsdefense(string json_data,string *insert_pvs_defense, string *insert_
     }
     catch(json::parse_error& e) {
         cout << "Parser UrobPvsAll: " << e.what() << endl;
-        //cout << js << endl;
+        fails ++ ;
     }
 
     js      = js["data"];
@@ -682,7 +686,7 @@ void UrobPvsMap(string json_data,string *insert_pvs_globalmap, string *insert_pv
     }
     catch(json::parse_error& e) {
         cout << "Parser UrobPvsMap: " << e.what() << endl;
-        //cout << js << endl;
+        fails ++ ;
     }
 
     js      = js["data"];
@@ -763,7 +767,7 @@ int Spracuj()
 
 int main()
 {
-    time_t start, stop, now;
+    time_t start, stop;
     time(&start);
     
     cout << "*********************************"<< endl;
@@ -777,22 +781,37 @@ int main()
 
     /** Ziskanie relevantnych account_id */
     GetAccountId();
-
-    cout << "Ma sa spracovat " << player_counter << " hracov" << endl;
+    cout << "Ma sa spracovat\t" << player_counter << " hracov" << endl;
     
     while(account_id.size() > 0)
     {
+        
         /** Ziskaj json */
         GetJson();
+        break;
         /** Spracuj json a uloz do databazy*/
         Spracuj();
-        /** Kolko uz bolo spracovanych dotazov */
-        time(&now);
-        cout << ctime(&now) << " - Spracovanych dotazov: " << counter[0]+counter[1]+counter[2]+counter[3]+counter[4]+counter[5]+counter[6]+counter[7] << endl;
+        break;
     }
     
     time(&stop);
-    cout << "Celkovy pocer dotazov: "    << counter[0]+counter[1]+counter[2]+counter[3]+counter[4]+counter[5]+counter[6]+counter[7] << endl;
+
+    VacuumAnalyze();
+
+    cout << "Celkovy pocer dotazov:\t"    << counter[0]+counter[1]+counter[2]+counter[3]+counter[4]+counter[5]+counter[6]+counter[7] << endl;
+    cout << "pvs_all dotazov:\t" << counter[0] << endl; 
+    cout << "pvs_all_h dotazov:\t" <<  counter[1] << endl;
+    cout << "pvs_skirmish:\t\t" << counter[2]  << endl;
+    cout << "pvs_skirmish_h:\t\t" << counter[3] << endl;
+    cout << "pvs_defense:\t\t" << counter[4] << endl;
+    cout << "pvs_defense_h:\t\t" << counter[5] << endl;
+    cout << "pvs_globalmap:\t\t" << counter[6] << endl;
+    cout << "pvs_globalmap_h:\t" << counter[7]  << endl;
+
+    cout << "****************************************" << endl;
+    cout << "Pocet chybnych json:\t" << fails << endl;
+    cout << "Zostalo nespracovanych hracov:\t" << player_counter << endl;
+
     cout << "Program skoncil pracovat: " << ctime(&stop) << endl;
     return 0;
 }
