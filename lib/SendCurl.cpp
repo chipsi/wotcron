@@ -64,9 +64,31 @@ string SendCurl::SendWGN(string method, string post)
 
     string data;
     data = this->SendRequest(url, postdata);
+    
+    tmp_post.clear(); tmp_url.clear();
+           
+    using json = nlohmann::json;
+    json js;
+    try{
+        js = json::parse(data);
+    }
+    catch(json::parse_error& e)  {
+        cout << "Parser in SendCurl: " << e.what() << endl;
+        cout << js << endl;
+    }
 
+    string status;
+    
+    status = js["status"].get<string>();
+
+    if(status.compare("ok") != 0) {
+        string fail = js["error"]["field"].get<string>() + ", " + js["error"]["message"].get<string>() + ": " + js["error"]["value"].get<string>();
+        throw runtime_error(fail);       
+    }
+    js.clear();
+    
+    
     return data;
-
 }
 
 string SendCurl::SendWOT(string method, string post)
@@ -82,7 +104,6 @@ string SendCurl::SendWOT(string method, string post)
     const char *postdata = tmp_post.c_str();
     
     string SendRequest(const char *url, const char *postdata);
-
     data = this->SendRequest(url, postdata);
     tmp_post.clear(); tmp_url.clear();
 
