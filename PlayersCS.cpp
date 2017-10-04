@@ -25,13 +25,13 @@ statistika stat;
 using namespace std;
 typedef queue<int>fronta;
 
-string table = "tmp_clans_cs";
+string table = "clan_all";
 
 
 
 void GetClanId(fronta *p_aids){
 
-    string query = "SELECT clan_id FROM " + table + " WHERE clan_id NOT IN (SELECT clan_id FROM clan_all_empty)";
+    string query = "SELECT clan_id FROM " + table + " WHERE language = 'cs' AND clan_id NOT IN (SELECT clan_id FROM clan_all_empty)";
 
     PGconn *conn;
     PGresult *result;
@@ -613,7 +613,13 @@ class Spracuj{
 
 
 int main(){
-    chrono::time_point<chrono::high_resolution_clock> start, t1, t2;
+    time_t startprog, stopprog;
+    time(&startprog);
+
+    cout << "*********************************"<< endl;
+    cout << endl << "Program zacal pracovat: " << ctime(&startprog) << endl;
+    
+    hrono::time_point<chrono::high_resolution_clock> start, t1, t2;
 
     /** Spustim meranie cas */
     start  = chrono::high_resolution_clock::now();
@@ -657,7 +663,8 @@ int main(){
         cout << "Ukoncene klany \t\t" << stat.empty_clan << endl;
 
 
-
+        time(&stopprog);
+        cout << "Program skoncil pracovat: " << ctime(&stopprog) << endl;
 
 
 return 0;
