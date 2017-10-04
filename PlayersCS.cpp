@@ -619,7 +619,7 @@ int main(){
     cout << "*********************************"<< endl;
     cout << endl << "Program zacal pracovat: " << ctime(&startprog) << endl;
     
-    hrono::time_point<chrono::high_resolution_clock> start, t1, t2;
+    chrono::time_point<chrono::high_resolution_clock> start, t1, t2;
 
     /** Spustim meranie cas */
     start  = chrono::high_resolution_clock::now();
