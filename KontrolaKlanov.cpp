@@ -288,6 +288,12 @@ void GetDataFromDatabese()
  
 }
 int main() {
+    time_t start, stop;
+    time(&start);
+
+    cout << "*********************************"<< endl;
+    cout << endl << "Program zacal pracovat: " << ctime(&start) << endl;
+    
     /** Pripravim dotaz do databazy */
     PreparedStatment();
 
@@ -310,7 +316,9 @@ int main() {
         page ++;jdata.clear();json_string.clear();
        
     }
-    
+    time(&stop);
+    cout << "Program skoncil pracovat: " << ctime(&stop) << endl;
+
 
     return 0;
 }

@@ -598,6 +598,9 @@ class Spracuj{
 int main(){
     chrono::time_point<chrono::high_resolution_clock> start, t1, t2;
 
+    /** Spustim meranie casu */
+    start  = chrono::high_resolution_clock::now();
+
     // Sem si ulozim vsetky clan_id
     fronta cids; fronta *p_cids; p_cids = &cids;
     GetClanId(p_cids);
@@ -609,7 +612,7 @@ int main(){
     while(!cids.empty())
     {
         i++;
-        start  = chrono::high_resolution_clock::now();
+        
         Get100Id(p_clan_id, p_cids, a_clan_id); // Ziskam string pre poslanie na server a pole intov na dalsie spracovanie
 
         SendPost(clan_id, p_json); // Poslem udaje na server a vyzdvihnem cerstvy material
