@@ -304,7 +304,7 @@ void UlozHraca(PGconn *conn, int account_id, float wn8player)
     PGresult *result, *result2;
     int ntuples, ntuples2;
 
-    string q1 = "SELECT account_id FROM wn8player_history WHERE account_id = "+to_string(account_id)+" and date = '"+date+"'";
+    string q1 = "SELECT account_id FROM wn8player_history WHERE account_id = "+to_string(account_id)+" and date = current_date - interval '1 days'";
     string q2 = "SELECT account_id FROM wn8player WHERE account_id="+to_string(account_id);
 
     result = PQexec(conn, q1.c_str());
@@ -320,7 +320,6 @@ void UlozHraca(PGconn *conn, int account_id, float wn8player)
     {
         string insert2 = "INSERT INTO wn8player (account_id,wn8) VALUES ("+to_string(account_id)+","+to_string(wn8player)+")";
         result = PQexec(conn,insert2.c_str());
-<<<<<<< HEAD
         if (PQresultStatus(result) != PGRES_COMMAND_OK)
                         {cout << "insert wn8player je chybny: " <<  PQresultErrorMessage(result) << endl;}
 
@@ -340,42 +339,16 @@ void UlozHraca(PGconn *conn, int account_id, float wn8player)
     // Pracuj s tabulkou wn8player_history
     if(ntuples == 0)
     {
-        string insert  = "INSERT INTO wn8player_history (account_id,wn8,date) VALUES ("+to_string(account_id)+","+to_string(wn8player)+",'"+date+"')";
         
-        result = PQexec(conn,insert.c_str());
-=======
-        if (PQresultStatus(result) != PGRES_COMMAND_OK)
-                        {cout << "insert wn8player je chybny: " <<  PQresultErrorMessage(result) << endl;}
-
-        PQclear(result);
-    }
-    else
-    {
-        string update2  = "UPDATE wn8player SET wn8 = "+to_string(wn8player)+" WHERE account_id = "+to_string(account_id);
-        result = PQexec(conn,update2.c_str());
->>>>>>> abeaa7bd9f5c3662d21737f8e1285218a2d7b573
-        if (PQresultStatus(result) != PGRES_COMMAND_OK)
-                        {cout << "insert into wn8player_history je chybny: " <<  PQresultErrorMessage(result) << endl;}
-
-        PQclear(result);
-    }
-
-   
-    // Pracuj s tabulkou wn8player_history
-    if(ntuples == 0)
-    {
-        string insert  = "INSERT INTO wn8player_history (account_id,wn8,date) VALUES ("+to_string(account_id)+","+to_string(wn8player)+",'"+date+"')";
+        
+        string insert  = "INSERT INTO wn8player_history (account_id,wn8,date) VALUES ("+to_string(account_id)+","+to_string(wn8player)+", current_date - interval '1 days')";
         
         result = PQexec(conn,insert.c_str());
         if (PQresultStatus(result) != PGRES_COMMAND_OK)
                         {cout << "insert into wn8player_history je chybny: " <<  PQresultErrorMessage(result) << endl;}
 
         PQclear(result);
-
-    }
-   
-
-
+    }    
 
 
 }
@@ -416,13 +389,15 @@ int main()
     float wn8player;
     
     int i;
+   
     for(i = 0; i < riadkov; i++)
     {
         ExecPSPlayersStat(conn, aids[i], pointer);
         ExecPSPVS(conn, aids[i],p_tstats);
         wn8player = wn8.GetWN8(pointer,p_tstats);
-        
+
         UlozHraca(conn,aids[i], wn8player);
+        
         tstats.clear();
         player_stat[0] = player_stat[1] = player_stat[2] = player_stat[3] = player_stat[4] = player_stat[5] = 0; 
     }
@@ -437,6 +412,6 @@ int main()
     time(&stop);
     cout << "Cas:\t\t" << secs << endl;
     cout << "Program skoncil pracovat: " << ctime(&stop) << endl;
-    return 0;
+    
     return 0;
 }
