@@ -315,10 +315,36 @@ class Spracuj{
 
             }
 
-            string spracuj_json_vyber_clan_id(string  json, int clan_id, int *members_count)
+            string spracuj_json_vyber_clan_id(string  json_data, int clan_id, int *members_count)
             {
+                
+                using json = nlohmann::json;
+                json js,j,c;
                 string clan_data;
+                int c_id;
 
+                try {
+                    js = json::parse(json_data);
+                }
+                catch(json::parse_error& e) {
+                    cout << "Parser 1: " << e.what() << endl;                    
+                }
+                 
+                j =  js["data"];
+
+                for (auto& y : json::iterator_wrapper(j)) {
+                
+                    c_id = stoi(y.key());
+                    if(c_id == clan_id) {
+                      c = y.value();                      
+                      *members_count = c["members_count"].get<int>();
+
+                      clan_data = c.dump();
+                    }
+                }
+                js.clear();j.clear();c.clear();
+
+                /*
                 int begin, end;
                 begin   = json.find(to_string(clan_id));
                 end     = json.find("]},",begin);
@@ -331,13 +357,37 @@ class Spracuj{
                 *members_count = stoi(clan_data.substr(begin+15,(end - begin+15)));
 
                 if(*members_count == 0){clan_data.clear();}
+                cout << clan_data << endl; 
+                */
 
                 return clan_data;
             }
 
             void spracuj_json_map(string clan_data, int *members_count)
             {
-                int begin, end, posled;
+                using json = nlohmann::json;
+                json js,c,d;   
+                player data;             
+                
+                try {
+                    js = json::parse(clan_data);
+                }
+                catch(json::parse_error& e) {
+                    cout << "Parser 2: " << e.what() << endl;                    
+                }
+
+                c = js["members"];
+                for (auto& y : json::iterator_wrapper(c)) {
+                    d = y.value();
+                    data.account_id = d["account_id"].get<int>();
+                    data.account_name = d["account_name"];
+                    data.joined_at  = d["joined_at"].get<int>();
+                    data.role_i18n = d["role_i18n"];
+                    
+                    fresh[data.account_id] = data;
+                }
+                
+                /*int begin, end, posled;
                 player data;
 
                 posled = 0;
@@ -381,7 +431,7 @@ class Spracuj{
                     fresh[id] = data;
 
                 }
-
+                */
 
 
 
