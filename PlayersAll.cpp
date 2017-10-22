@@ -1,6 +1,7 @@
 #include <iostream>
 #include "./lib/SendCurl.h"
 #include "./lib/Pgsql.h"
+#include "./json/src/json.hpp"
 #include <thread>
 #include <sstream>
 #include <chrono>
@@ -77,14 +78,31 @@ void Get100Id(string *p_clan_id, fronta *p_aids, int a_clan_id[100]){
 
 void SendPost(string clan_id, string *json){
     const char text[] = "&fields=clan_id,members_count,members.account_id,members.account_name,members.joined_at,members.role_i18n&language=cs";
-
+    int x = 1;
+    chrono::seconds dura(3);
     string field(text);
 
     const string method   = "/clans/info/";
 
     string post_data = field  + "&clan_id="+ clan_id;
     SendCurl send;
-    *json = send.SendWGN(method, post_data);
+    
+    //*json = send.SendWGN(method, post_data);
+
+    do{
+        try {
+            *json = send.SendWGN(method, post_data);
+            x = 0;            
+        }
+        catch(exception& e) {
+            cout << e.what() << endl;
+            this_thread::sleep_for( dura );
+            x = 1;
+            //json = send.SendWOT(method, post_data);
+        }
+    }
+    while(x != 0);
+
 
 }
 
