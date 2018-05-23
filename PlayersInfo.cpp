@@ -23,7 +23,7 @@ string Send(string method, string post)
     SendCurl send;
     string json;
     
-    json = send.SendWOT(method, post);
+    json = send.SendWOT(method, post);    
    
     return json; 
 }
@@ -65,7 +65,7 @@ void Players2(int *p_Array, int *p_riadkov)
         a_id.clear();
     }
 
-    sql.clear();PQclear(result);
+    sql.clear();PQclear(result);PQfinish(conn);a_id.clear();
 }
 
 int CountPlayers2()
@@ -82,7 +82,7 @@ int CountPlayers2()
     
     i = stoi(a_id);
 
-    a_id.clear();PQclear(result);
+    a_id.clear();PQclear(result);PQfinish(conn);a_id.clear();
     return i;
 
 }
@@ -109,6 +109,7 @@ string Sekera(int *p_Array, int i, int *ptr_riadkov, int *ptr_sprac)
     }
     
     account_ids.erase(account_ids.end()-1); // Vymaze poslednu ciarku
+    a_id.clear();
    
     return account_ids;
 }
