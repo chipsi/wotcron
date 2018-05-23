@@ -275,13 +275,12 @@ class Database {
             $res = FALSE; $update = FALSE;
             
         }
-        echo "Pocet updatov: \t".$this->upd_counter."\n";
-        echo "Pocet insertov:\t".$this->ins_counter."\n";
         
     }
    
 }
 
+echo "\rSkript sa zacal vykonavat:  \t \t".date('Y-m-d H:i:s', $_SERVER["REQUEST_TIME_FLOAT"]). "\r";
 
 $database = new Database();
 $account = new account2();
@@ -309,3 +308,4 @@ foreach($players as $id) {
 }
 
 
+echo "Skript skoncil : \t \t \t".date('Y-m-d H:i:s', time())."\r";
