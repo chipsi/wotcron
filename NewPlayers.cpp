@@ -27,7 +27,6 @@ player player_data;
 
 queue<int> id;
 typedef map<int,player> mymap;
-
 mymap data;
 
 int pocet = 0;

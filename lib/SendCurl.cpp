@@ -95,6 +95,7 @@ string SendCurl::SendWOT(string method, string post)
 {
     using namespace std;
     
+
     string data;
     // Treba premenit string na char
     string tmp_url = server_wot+method;
