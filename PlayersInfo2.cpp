@@ -90,6 +90,7 @@ void SendPost() {
 
     json_data = send->SendWOT(method, post);        
 
+    post.clear();
     delete send;      
 }
 
@@ -152,8 +153,9 @@ void CheckData () {
 
     for(map<int,player>::iterator it = maps_data.begin(); it != maps_data.end(); it++) {
             
-            string a_id = to_string(it->first);
-            paramValues[0] = a_id.c_str();
+            //string a_id = to_string(it->first);
+            paramValues[0] = to_string(it->first).c_str();
+            
     
             result  = PQexecPrepared(conn,"players_info",1,paramValues,NULL,NULL,0);
                 if (PQresultStatus(result) != PGRES_TUPLES_OK)
@@ -205,19 +207,17 @@ int main() {
             GetPost();
             SendPost();
             ParseJson();
-            CheckData();
-
-
-
-            
+            CheckData();            
 
             json_data.clear();maps_data.clear();
             post.clear();
 
+
+            cout << "POST : " <<post.size() << endl;
+            cout << "JSON DATA : " << json_data.size() << endl;
+            cout << "MAP data :" << maps_data.size() << endl;
+            cout << "Stack account_ids: " << account_ids.size() << endl;
         }
-
-
-    int c;
-    cin >> c;
+   
     return 0;
 }
