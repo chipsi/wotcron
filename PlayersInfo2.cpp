@@ -23,6 +23,9 @@ const string method   = "/account/info/";
 string post;
 string json_data;
 
+int insert_counter = 0;
+int update_counter = 0;
+
 struct player {
   int account_id ;
   int global_rating;
@@ -38,7 +41,6 @@ typedef map<int,player> mymap;
 mymap maps_data;
 
 stack<int>account_ids;
-
 PGconn *conn;
 
 void PripojDatabase() {
@@ -74,6 +76,20 @@ void NaplnStack() {
     
     cout << "Celkom hracov spracovanie: " << account_ids.size() << endl;
 
+    PQclear(result);
+}
+
+void VaccuumAnalyze() {
+    PGresult *result;    
+    const char *sql = "VACUUM FULL ANALYZE players_info";
+
+    result = PQexec(conn, sql);
+
+    if (PQresultStatus(result) != PGRES_COMMAND_OK) {
+        fprintf(stderr, "VACUUM ANALYZE FULL players_info bolo chybne: %s", PQerrorMessage(conn));
+        PQclear(result);
+    }
+    cout << "Prebehlo Vacuum Analyze players_info2" << endl;
     PQclear(result);
 }
 
@@ -145,7 +161,7 @@ void ParseJson() {
 
 void CheckData () {
 
-    PGresult *prepared, *update_q;       
+    PGresult *prepared, *update_q, *insert_q;       
 
     const char *paramValues[1];
     int riadkov;   
@@ -186,6 +202,10 @@ void CheckData () {
                     sql += " last_battle_time = to_timestamp("+ to_string(it->second.last_battle_time) +") WHERE account_id  = " + to_string(it->first);
                     
                     update_q = PQexec(conn, sql.c_str());
+
+                    // Pocitadlo updatov
+                    update_counter ++;
+
                         if (PQresultStatus(update_q) != PGRES_COMMAND_OK)
                             {cout << "Chyba update players_info "  <<  PQresultErrorMessage(update_q) << endl;}
                     PQclear(update_q);
@@ -193,7 +213,21 @@ void CheckData () {
             }
 
             if(riadkov == 0 ) {
-                /* INSERT */
+                string ins_sql = "INSERT INTO players_info (account_id,global_rating,client_language,logout_at,last_battle_time,created_at) VALUES ";
+                ins_sql += "("+to_string(it->first)+","+to_string(it->second.global_rating)+",'"+it->second.client_language+"',to_timestamp("+ to_string(it->second.logout_at) +"),to_timestamp("+ to_string(it->second.last_battle_time) +"),to_timestamp("+ to_string(it->second.created_at)+"))";
+                
+                insert_q = PQexec(conn, ins_sql.c_str());
+
+                // Pocitadlo insertov
+                insert_counter ++;
+
+                        if (PQresultStatus(insert_q) != PGRES_COMMAND_OK)
+                            {cout << "Chyba update players_info "  <<  PQresultErrorMessage(insert_q) << endl;}
+
+                PQclear(insert_q);
+
+
+                ins_sql.clear();
             }
             PQclear(prepared);
     }    
@@ -201,6 +235,11 @@ void CheckData () {
 
 
 int main() {
+
+        time_t start, stop;
+    
+        time(&start);
+        cout << "Program zacal pracovat o: " << ctime(&start) << endl;
 
         PripojDatabase();
         NaplnStack();
@@ -213,15 +252,15 @@ int main() {
             CheckData();            
 
             json_data.clear();maps_data.clear();
-            post.clear();
-
-
-            cout << "POST : " <<post.size() << endl;
-            cout << "JSON DATA : " << json_data.size() << endl;
-            cout << "MAP data :" << maps_data.size() << endl;
-            cout << "Stack account_ids: " << account_ids.size() << endl;
+            post.clear();            
         }
-
+        
+        VaccuumAnalyze();
         PQfinish(conn);
+
+        cout << "Pocet spracovanych updatov :" << update_counter << endl;
+        cout << "Pocet spracovanych insertov :" << insert_counter << endl;
+        time(&stop);
+        cout << endl << "Program skoncil o: " << ctime(&stop) << endl << endl;
     return 0;
 }
