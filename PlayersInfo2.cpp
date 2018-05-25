@@ -39,14 +39,29 @@ mymap maps_data;
 
 stack<int>account_ids;
 
+PGconn *conn;
+
+void PripojDatabase() {
+    Pgsql *trieda  = new Pgsql();
+    conn = trieda->Get();
+
+    /////////// Priprav dotaz
+    PGresult *result;    
+    const char* query  = "SELECT account_id,client_language,global_rating,extract(epoch from logout_at),extract(epoch from created_at),extract(epoch from last_battle_time) FROM players_info WHERE account_id = $1";
+
+    result = PQprepare(conn,"players_info",query,1,NULL);
+    if (PQresultStatus(result) != PGRES_COMMAND_OK)
+    {
+        fprintf(stderr, "Prepared statment players_info je chybny: %s", PQerrorMessage(conn));
+        PQclear(result);
+    }
+    PQclear(result);
+}
 
 
 void NaplnStack() {
 
-    PGconn *conn; PGresult *result;
-    Pgsql *trieda  = new Pgsql();
-    conn = trieda->Get();
-
+    PGresult *result;    
     const char *sql = "SELECT account_id FROM players_all ORDER BY account_id DESC";
 
     result = PQexec(conn, sql);
@@ -59,8 +74,7 @@ void NaplnStack() {
     
     cout << "Celkom hracov spracovanie: " << account_ids.size() << endl;
 
-    PQclear(result);PQfinish(conn);
-    delete trieda;
+    PQclear(result);
 }
 
 void GetPost() {
@@ -131,21 +145,7 @@ void ParseJson() {
 
 void CheckData () {
 
-    PGconn *conn; PGresult *result,*update_q;
-    Pgsql *trieda  = new Pgsql();
-    conn = trieda->Get();    
-
-    const char* query  = "SELECT account_id,client_language,global_rating,extract(epoch from logout_at),extract(epoch from created_at),extract(epoch from last_battle_time) FROM players_info WHERE account_id = $1";
-
-    result = PQprepare(conn,"players_info",query,1,NULL);
-    if (PQresultStatus(result) != PGRES_COMMAND_OK)
-    {
-        fprintf(stderr, "Prepared statment players_info je chybny: %s", PQerrorMessage(conn));
-        PQclear(result);
-    }
-    PQclear(result);
-    
-    ///////////////////////////////////////////////
+    PGresult *prepared, *update_q;       
 
     const char *paramValues[1];
     int riadkov;   
@@ -157,27 +157,27 @@ void CheckData () {
             paramValues[0] = to_string(it->first).c_str();
             
     
-            result  = PQexecPrepared(conn,"players_info",1,paramValues,NULL,NULL,0);
-                if (PQresultStatus(result) != PGRES_TUPLES_OK)
-                    {fprintf(stderr, "Select statment players_info je chybny: %s ", PQresultErrorMessage(result));}
+            prepared  = PQexecPrepared(conn,"players_info",1,paramValues,NULL,NULL,0);
+                if (PQresultStatus(prepared) != PGRES_TUPLES_OK)
+                    {fprintf(stderr, "Select statment players_info je chybny: %s ", PQresultErrorMessage(prepared));}
 
-            riadkov  = PQntuples(result);                        
+            riadkov  = PQntuples(prepared);                        
 
             // Ak mam zaznam UPDATE
             if(riadkov == 1) {
                 int up = 0;
                 
-                if(it->second.client_language.compare( PQgetvalue(result,0,1)) != 0) {
+                if(it->second.client_language.compare( PQgetvalue(prepared,0,1)) != 0) {
                     up = 1;
                 }
-                if(it->second.global_rating != stoi(PQgetvalue(result,0,2))) {
+                if(it->second.global_rating != stoi(PQgetvalue(prepared,0,2))) {
                     up = 1;
                 }
-                if(it->second.logout_at != stoi(PQgetvalue(result,0,2))) {
+                if(it->second.logout_at != stoi(PQgetvalue(prepared,0,2))) {
                     up = 1;
                 }
                 
-                if(it->second.last_battle_time != stoi(PQgetvalue(result,0,5))) {
+                if(it->second.last_battle_time != stoi(PQgetvalue(prepared,0,5))) {
                     up = 1;
                 }
 
@@ -190,16 +190,19 @@ void CheckData () {
                             {cout << "Chyba update players_info "  <<  PQresultErrorMessage(update_q) << endl;}
                     PQclear(update_q);
                 }
-
             }
-    }
 
-    PQfinish(conn);PQclear(result); delete trieda;
+            if(riadkov == 0 ) {
+                /* INSERT */
+            }
+            PQclear(prepared);
+    }    
 }
 
 
 int main() {
-    
+
+        PripojDatabase();
         NaplnStack();
 
         while (!account_ids.empty()) {
@@ -218,6 +221,7 @@ int main() {
             cout << "MAP data :" << maps_data.size() << endl;
             cout << "Stack account_ids: " << account_ids.size() << endl;
         }
-   
+
+        PQfinish(conn);
     return 0;
 }
