@@ -18,7 +18,7 @@
 using namespace std;
 
 // Co budem pozadovat od serveru
-const string field = "&fields=account_id,client_language,global_rating,created_at,logout_at,last_battle_time";
+const string field = "&fields=account_id,client_language,global_rating";
 const string method   = "/account/info/";
 string post;
 string json_data;
@@ -29,10 +29,7 @@ int update_counter = 0;
 struct player {
   int account_id ;
   int global_rating;
-  string client_language;
-  int created_at ;
-  int last_battle_time;
-  int logout_at;
+  string client_language;  
 };
 
 player player_data;
@@ -49,7 +46,7 @@ void PripojDatabase() {
 
     /////////// Priprav dotaz
     PGresult *result;    
-    const char* query  = "SELECT account_id,client_language,global_rating,extract(epoch from logout_at),extract(epoch from created_at),extract(epoch from last_battle_time) FROM players_info WHERE account_id = $1";
+    const char* query  = "SELECT account_id,global_rating,client_language FROM players_info WHERE account_id = $1";
 
     result = PQprepare(conn,"players_info",query,1,NULL);
     if (PQresultStatus(result) != PGRES_COMMAND_OK)
@@ -69,8 +66,7 @@ void NaplnStack() {
     result = PQexec(conn, sql);
     int ntuples = PQntuples(result);   
 
-    for(int i = 0; i < ntuples; i++)
-    {
+    for(int i = 0; i < ntuples; i++)  {
         account_ids.push(stoi(PQgetvalue(result, i, 0)));        
     }
     
@@ -144,10 +140,7 @@ void ParseJson() {
                 {
                     player_data.account_id = j["account_id"].get<int>();
                     player_data.global_rating = j["global_rating"].get<int>();
-                    player_data.client_language = j["client_language"].get<string>();
-                    player_data.created_at = j["created_at"].get<int>();
-                    player_data.last_battle_time = j["last_battle_time"].get<int>();
-                    player_data.logout_at = j["logout_at"].get<int>();  
+                    player_data.client_language = j["client_language"].get<string>();                    
 
                     maps_data[j["account_id"].get<int>()] = player_data;
                 }                
@@ -183,38 +176,34 @@ void CheckData () {
             if(riadkov == 1) {
                 int up = 0;
                 
-                if(it->second.client_language.compare( PQgetvalue(prepared,0,1)) != 0) {
+                if(it->second.client_language.compare( PQgetvalue(prepared,0,2)) != 0) {
+                    //cout << "Language: " << it->second.client_language << " vs " << PQgetvalue(prepared,0,2) << endl;
                     up = 1;
                 }
-                if(it->second.global_rating != stoi(PQgetvalue(prepared,0,2))) {
+                if(it->second.global_rating != stoi(PQgetvalue(prepared,0,1))) {
+                    //cout << "Global rating: "<< it->second.global_rating << " vs " << PQgetvalue(prepared,0,1) << endl;
                     up = 1;
-                }
-                if(it->second.logout_at != stoi(PQgetvalue(prepared,0,2))) {
-                    up = 1;
-                }
-                
-                if(it->second.last_battle_time != stoi(PQgetvalue(prepared,0,5))) {
-                    up = 1;
-                }
+                }                
 
-                if(up == 1) {
-                    string sql = "UPDATE players_info SET client_language = '" + it->second.client_language + "', global_rating = " + to_string( it->second.global_rating ) + ", logout_at = to_timestamp(" + to_string(it->second.logout_at) + "), created_at = to_timestamp("+ to_string(it->second.created_at)+"),";
-                    sql += " last_battle_time = to_timestamp("+ to_string(it->second.last_battle_time) +") WHERE account_id  = " + to_string(it->first);
+                if(up != 0) {
+                    string sql = "UPDATE players_info SET client_language='" + it->second.client_language + "',global_rating="+to_string(it->second.global_rating)+" WHERE account_id  = " + to_string(it->first);                   
                     
                     update_q = PQexec(conn, sql.c_str());
-
+                    //cout << sql << endl;
                     // Pocitadlo updatov
                     update_counter ++;
 
                         if (PQresultStatus(update_q) != PGRES_COMMAND_OK)
                             {cout << "Chyba update players_info "  <<  PQresultErrorMessage(update_q) << endl;}
                     PQclear(update_q);
+
+                    sql.clear();
                 }
             }
 
             if(riadkov == 0 ) {
-                string ins_sql = "INSERT INTO players_info (account_id,global_rating,client_language,logout_at,last_battle_time,created_at) VALUES ";
-                ins_sql += "("+to_string(it->first)+","+to_string(it->second.global_rating)+",'"+it->second.client_language+"',to_timestamp("+ to_string(it->second.logout_at) +"),to_timestamp("+ to_string(it->second.last_battle_time) +"),to_timestamp("+ to_string(it->second.created_at)+"))";
+                string ins_sql = "INSERT INTO players_info (account_id,global_rating,client_language) VALUES ";
+                ins_sql += "("+to_string(it->first)+","+to_string(it->second.global_rating)+",'"+it->second.client_language+"')";
                 
                 insert_q = PQexec(conn, ins_sql.c_str());
 
