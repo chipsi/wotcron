@@ -6,7 +6,7 @@ PlayersCS: SendCurl.o Pgsql.o PlayersCS.o  ./lib/SendCurl.h  ./lib/Pgsql.h
 	$(CXX)  -o  ./bin/PlayersCS PlayersCS.o ./lib/SendCurl.o  ./lib/Pgsql.o $(LIBFLAGS)
 
 PlayersCS.o:	PlayersCS.cpp 
-	$(CXX) -c $(CPPFLAGS) PlayersCS.cpp
+	$(CXX) -c $(CPPFLAGS) PlayersCS.cpp -o PlayersCS.o
 
 SendCurl.o:	./lib/SendCurl.cpp   
 	$(CXX) -c $(CPPFLAGS)  ./lib/SendCurl.cpp  -o ./lib/SendCurl.o
