@@ -651,6 +651,8 @@ int main(){
         clan_id.clear();json.clear();
         CleaArray(a_clan_id);
 
+	cout << "Sucasne kolo: " << i << endl;
+
     }
 
         t1 = chrono::high_resolution_clock::now();

@@ -51,7 +51,7 @@ void Players2(int *p_Array, int *p_riadkov)
     conn = trieda.Get();
     int i; string a_id;int ntuples;
 
-    string sql = "SELECT account_id FROM players_all";
+    string sql = "SELECT account_id FROM players_all ORDER BY account_id DESC";
 
     result = PQexec(conn, sql.c_str());
     ntuples = PQntuples(result);

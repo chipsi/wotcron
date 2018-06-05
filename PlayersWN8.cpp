@@ -200,8 +200,7 @@ class WN8Player
 
         float GetWN8(int *PlayerData, mymap *TankData)
         {
-            float wn8;
-            
+            float wn8 = 0;            
             wn8  = this->Calculate(PlayerData,TankData);
             return wn8;
         }
@@ -212,7 +211,9 @@ class WN8Player
         float Calculate(int *PlayerData, mymap *TankData)
         {   
             double expDMG,expSpot,expFrag,expDef,expWin;
+	    expDMG = expSpot = expFrag = expDef = expWin = 0.00;
             etv_data tmp;
+
             int tank_id,battles;
 
             for (auto& x: *TankData)
@@ -232,6 +233,8 @@ class WN8Player
             }
 
             double rDMG,rSpot,rFrag,rDef,rWin;
+	    rDMG = rSpot = rFrag = rDef = rWin = 0.00;
+
             rDMG    = PlayerData[0]  / expDMG;
             rSpot   = PlayerData[1]  / expSpot;
             rFrag   = PlayerData[2]  / expFrag;
@@ -239,8 +242,7 @@ class WN8Player
             rWin    = PlayerData[4]  / expWin;
 
             double rDMGc,rSpotc,rFragc,rDefc,rWinc;
-
-            
+	    rDMGc = rSpotc = rFragc = rDefc = rWinc = 0.00;
 
             rDMGc   = max(0.00,                    (rDMG - 0.22) / (1.00 - 0.22));
             rSpotc  = max(0.00, min(rDMGc + 0.1,   (rSpot - 0.38) / (1.00 - 0.38)));
@@ -248,9 +250,9 @@ class WN8Player
             rDefc   = max(0.00, min(rDMGc + 0.1,   (rDef -  0.10) / (1.00 - 0.10)));
             rWinc   = max(0.00,                    (rWin - 0.71) / (1 - 0.71));
 
-
             float wn8 = 980 * rDMGc + 210 * rDMGc * rFragc + 155 * rFragc * rSpotc + 75 * rDefc * rFragc + 145 * min(1.8,rWinc);
-
+		
+	    
 
             return wn8;
 
@@ -385,8 +387,8 @@ int main()
 
     void UlozHraca(PGconn *conn, int account_id, float wn8player);
 
-    WN8Player wn8;
     float wn8player;
+    WN8Player *wn8 = new WN8Player;
     
     int i;
    
@@ -394,7 +396,8 @@ int main()
     {
         ExecPSPlayersStat(conn, aids[i], pointer);
         ExecPSPVS(conn, aids[i],p_tstats);
-        wn8player = wn8.GetWN8(pointer,p_tstats);
+
+	wn8player = wn8->GetWN8(pointer,p_tstats);	
 
         UlozHraca(conn,aids[i], wn8player);
         

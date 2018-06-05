@@ -215,7 +215,7 @@ class Database {
     }
 
     public function SelectAccountId():array {
-        $sql = 'SELECT account_id FROM players_all';
+        $sql = 'SELECT account_id FROM players_all ORDER BY account_id DESC';
 
        $sth = $this->conn->prepare($sql);
        $sth->execute();
@@ -280,7 +280,7 @@ class Database {
    
 }
 
-echo "\rSkript sa zacal vykonavat:  \t \t".date('Y-m-d H:i:s', $_SERVER["REQUEST_TIME_FLOAT"]). "\r";
+echo "\rSkript sa zacal vykonavat:  \t \t".date('Y-m-d H:i:s', time()). "\r";
 
 $database = new Database();
 $account = new account2();

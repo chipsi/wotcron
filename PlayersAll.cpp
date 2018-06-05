@@ -644,13 +644,10 @@ int main(){
         Spracuj *doit = new Spracuj(a_clan_id, json, permanent_connection);
 
 
-
-
-
         delete doit;
         clan_id.clear();json.clear();
         CleaArray(a_clan_id);
-
+	cout <<  "Sucasne kolo: " << i << endl;
     }
 
         t1 = chrono::high_resolution_clock::now();
