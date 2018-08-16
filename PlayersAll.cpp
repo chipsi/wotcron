@@ -31,7 +31,7 @@ string table = "clan_all";
 void GetClanId(fronta *p_aids, PGconn *permanent_connection){
 
     string query = "SELECT clan_id FROM " + table + " WHERE language != 'cs' AND clan_id NOT IN (SELECT clan_id FROM clan_all_empty) ORDER BY clan_id DESC";
-    //string query = "SELECT clan_id FROM " + table + " WHERE language = 'cs' AND clan_id NOT IN (SELECT clan_id FROM clan_all_empty)";
+    //string query = "SELECT clan_id FROM " + table + " WHERE language = 'cs' AND clan_id NOT IN (SELECT clan_id FROM clan_all_empty) ORDER BY clan_id DESC";
  
     PGresult *result;
 
@@ -82,7 +82,8 @@ void SendPost(string clan_id, string *json){
     
     const string method   = "/clans/info/";
 
-    string post_data = field  + "&clan_id="+ clan_id;
+    string post_data = field  + "&clan_id="+ clan_id;    
+
     SendCurl send;
 
     do{
@@ -99,7 +100,7 @@ void SendPost(string clan_id, string *json){
     }
     while(x != 0);
 
-    
+    post_data.clear(); field.clear();
 
 }
 
@@ -187,7 +188,7 @@ class Spracuj{
                 i++;
                 if(i >= 100){break;}
 
-                players_all.clear();fresh.clear();members_role.clear();
+                players_all.clear();fresh.clear();members_role.clear();clan_data.clear();
 
 
             }            
@@ -319,7 +320,14 @@ class Spracuj{
                 // Zistim kolko zaznamov ma klan
                 begin   = clan_data.find("members_count");
                 end     = clan_data.find(",",begin);
-                *members_count = stoi(clan_data.substr(begin+15,(end - begin+15)));
+                try {
+                    *members_count = stoi(clan_data.substr(begin+15,(end - begin+15)));
+                }
+                catch(int e) {
+                    cout << "Chyba json vyber klan id" << endl;
+                    cout << clan_data << endl;
+                }
+                
 
                 if(*members_count == 0){clan_data.clear();}
 
@@ -334,6 +342,7 @@ class Spracuj{
                 posled = 0;
 
                 int id,join;
+                id = join = 0;
                 string role,nick;
 
 
@@ -352,7 +361,12 @@ class Spracuj{
 
                     begin       = clan_data.find("joined_at",end);
                     end         = clan_data.find(",",begin);
-                    join        = stoi(clan_data.substr(begin + 11, (end-1) - (begin +11)));
+                    try {
+                        join        = stoi(clan_data.substr(begin + 11, (end-1) - (begin +11)));
+                    }
+                    catch(int e) {
+                        cout << "JSON MAP " << endl;
+                    }
 
                     begin       = clan_data.find("account_name",end);
                     end         = clan_data.find(",",begin);
@@ -360,7 +374,12 @@ class Spracuj{
 
                     begin       = clan_data.find("account_id",end);
                     end         = clan_data.find(",",begin);
-                    id          = stoi(clan_data.substr(begin + 12, (end-1) - (begin +12)));
+                    try {
+                        id          = stoi(clan_data.substr(begin + 12, (end-1) - (begin +12)));
+                    }
+                    catch(int e) {
+                        cout << "JSON MAP 2" << endl;
+                    }
 
                     posled      = end;
 
@@ -610,7 +629,7 @@ int main(){
     cout << "*********************************"<< endl;
     cout << endl << "Program zacal pracovat: " << ctime(&startprog) << endl;
     
-    chrono::time_point<chrono::high_resolution_clock> start, t1, t2;
+    chrono::time_point<chrono::high_resolution_clock> start, t1, t2,main1,main2;
 
     /** Spustim meranie cas */
     start  = chrono::high_resolution_clock::now();
@@ -628,26 +647,32 @@ int main(){
     // Sem si ulozim vsetky clan_id
     fronta cids; fronta *p_cids; p_cids = &cids;
     GetClanId(p_cids,permanent_connection);
-
+    cout << "Pocet klanov v main" << cids.size() << endl;
     string json; string *p_json; p_json = &json;
     string clan_id; string *p_clan_id; p_clan_id = &clan_id;
     int a_clan_id[100];
     int i = 0;
     while(!cids.empty())
     {
-        i++;
+        main1 = chrono::high_resolution_clock::now();
+	i++;
         
         Get100Id(p_clan_id, p_cids, a_clan_id); // Ziskam string pre poslanie na server a pole intov na dalsie spracovanie
 
         SendPost(clan_id, p_json); // Poslem udaje na server a vyzdvihnem cerstvy material
 
         Spracuj *doit = new Spracuj(a_clan_id, json, permanent_connection);
-
+        
+        clan_id.clear();json.clear();CleaArray(a_clan_id);
 
         delete doit;
-        clan_id.clear();json.clear();
-        CleaArray(a_clan_id);
-	cout <<  "Sucasne kolo: " << i << endl;
+
+	main2 = chrono::high_resolution_clock::now();
+	chrono::duration<double> elapsed_main = main2-main1;
+
+	cout << elapsed_main.count() <<" Sucasne kolo: " << i << " Zostava cids: "<< cids.size() << endl;
+        
+
     }
 
         t1 = chrono::high_resolution_clock::now();

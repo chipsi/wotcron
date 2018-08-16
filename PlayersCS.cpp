@@ -629,7 +629,7 @@ int main(){
     cout << "*********************************"<< endl;
     cout << endl << "Program zacal pracovat: " << ctime(&startprog) << endl;
     
-    chrono::time_point<chrono::high_resolution_clock> start, t1, t2;
+    chrono::time_point<chrono::high_resolution_clock> start, t1, t2,main1,main2;
 
     /** Spustim meranie cas */
     start  = chrono::high_resolution_clock::now();
@@ -654,7 +654,8 @@ int main(){
     int i = 0;
     while(!cids.empty())
     {
-        i++;
+        main1 = chrono::high_resolution_clock::now();
+	i++;
         
         Get100Id(p_clan_id, p_cids, a_clan_id); // Ziskam string pre poslanie na server a pole intov na dalsie spracovanie
 
@@ -666,7 +667,10 @@ int main(){
 
         delete doit;
 
-	    cout << "Sucasne kolo: " << i << " Zostava cids: "<< cids.size() << endl;
+	main2 = chrono::high_resolution_clock::now();
+	chrono::duration<double> elapsed_main = main2-main1;
+
+	cout << elapsed_main.count() <<" Sucasne kolo: " << i << " Zostava cids: "<< cids.size() << endl;
         
 
     }

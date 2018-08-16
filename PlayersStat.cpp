@@ -340,7 +340,8 @@ void Upsert(PGconn *conn,string table,int *pStat,int *pdStat, string account_id)
     
     PGresult *result;
     
-        string insert = "INSERT INTO "+ table +"_history (damage_dealt,spotted,frags,dropped_capture_points,battles,wins,battle_avg_xp,date,account_id) VALUES ("+to_string(pStat[0] - pdStat[0])+","+to_string(pStat[1] - pdStat[1])+
+        if( (pStat[4] - pdStat[4]) > 0){			
+		string insert = "INSERT INTO "+ table +"_history (damage_dealt,spotted,frags,dropped_capture_points,battles,wins,battle_avg_xp,date,account_id) VALUES ("+to_string(pStat[0] - pdStat[0])+","+to_string(pStat[1] - pdStat[1])+
                     ","+to_string(pStat[2] - pdStat[2])+","+to_string(pStat[3] - pdStat[3])+","+to_string(pStat[4] - pdStat[4])+","+to_string(pStat[5] - pdStat[5])+
                     ","+to_string(pStat[6] - pdStat[6])+", now() - interval '1 day',"+account_id+")";
              
@@ -349,7 +350,8 @@ void Upsert(PGconn *conn,string table,int *pStat,int *pdStat, string account_id)
             {cout << "Chyba insertu do " << table+"_history: " <<  PQresultErrorMessage(result) << endl;}
 
         insert.clear();PQclear(result);
-
+		}
+			
         string update = "UPDATE "+table+" SET damage_dealt = "+to_string(pStat[0])+",spotted = "+to_string(pStat[1])+",frags = "+to_string(pStat[2])+",dropped_capture_points = "+to_string(pStat[3])+
                         ",battles = "+to_string(pStat[4])+",wins = "+to_string(pStat[5])+",battle_avg_xp = "+to_string(pStat[6])+" WHERE account_id = "+account_id; 
 
