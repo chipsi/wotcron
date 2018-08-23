@@ -249,13 +249,15 @@ void Update3()
     {
         account_id = PQgetvalue(data,i,0);
         History(p_account_id, conn, p_data7,p_data14,p_data30,p_avgxp);
+
+	if(data7.length() > 1 && data14.length() > 1 &&  data30.length() > 1)
+	{
+          sql_update = "UPDATE nabor_new SET last7="+data7+",last14="+data14+",last30="+data30+",avgxp=" + avgxp + " WHERE account_id = " + account_id;
         
-        sql_update = "UPDATE nabor_new SET last7="+data7+",last14="+data14+",last30="+data30+",avgxp=" + avgxp + " WHERE account_id = " + account_id;
-        
-        result = PQexec(conn, sql_update.c_str());
+          result = PQexec(conn, sql_update.c_str());
             if (PQresultStatus(result) != PGRES_COMMAND_OK)
                 {cout << "Chyba update dni: " <<  PQresultErrorMessage(result) << endl;}
-
+	}
         sql_update.clear();account_id.clear();data7.clear();data14.clear();data30.clear();
     }
 

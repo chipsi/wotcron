@@ -1,6 +1,6 @@
 
-LIBFLAGS:= -L/usr/lib/x86_64-linux-gnu -lpq -lcurl -lpthread
-CPPFLAGS:= --std=c++11 -Wall -I/usr/include/postgresql
+LIBFLAGS:= -L/usr/lib/x86_64-linux-gnu -lpq -lcurl -lpthread -fPIC
+CPPFLAGS:= --std=c++11 -Wall -I/usr/include/postgresql -fPIC
 
 
 PlayersStat: SendCurl.o Pgsql.o PlayersStat.o  ./lib/SendCurl.h  ./lib/Pgsql.h

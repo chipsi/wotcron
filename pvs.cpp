@@ -106,8 +106,8 @@ void GetAccountId()
 {
         
     PGresult *result;
-    //const char *query = "SELECT account_id FROM players_stat_all_history WHERE date = current_date - interval '1 days ' AND battles > 0";
-    const char *query  = "SELECT account_id FROM players_all";
+    const char *query = "SELECT account_id FROM players_stat_all_history WHERE date = current_date - interval '1 days ' AND battles > 0";
+    //const char *query  = "SELECT account_id FROM players_all";
     result          = PQexec(conn, query);
          if (PQresultStatus(result) != PGRES_TUPLES_OK)
                 {cout << "GetPlayers: " <<  PQresultErrorMessage(result) << endl;}
