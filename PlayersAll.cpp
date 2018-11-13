@@ -30,7 +30,7 @@ string table = "clan_all";
 
 void GetClanId(fronta *p_aids, PGconn *permanent_connection){
 
-    string query = "SELECT clan_id FROM " + table + " WHERE language != 'cs' AND clan_id NOT IN (SELECT clan_id FROM clan_all_empty) ORDER BY clan_id DESC";
+    string query = "SELECT clan_id FROM " + table + " WHERE language != 'cs' AND clan_id NOT IN (SELECT clan_id FROM clan_all_empty) AND clan_id !=  500150759 ORDER BY clan_id DESC";
     //string query = "SELECT clan_id FROM " + table + " WHERE language = 'cs' AND clan_id NOT IN (SELECT clan_id FROM clan_all_empty) ORDER BY clan_id DESC";
  
     PGresult *result;
@@ -670,6 +670,10 @@ int main(){
 	main2 = chrono::high_resolution_clock::now();
 	chrono::duration<double> elapsed_main = main2-main1;
 
+    /** Pausa pred dalsim kolom na ulozenie databazy */ 
+    chrono::seconds dura(3); // pausa 3 sec
+    this_thread::sleep_for( dura );
+    
 	cout << elapsed_main.count() <<" Sucasne kolo: " << i << " Zostava cids: "<< cids.size() << endl;
         
 

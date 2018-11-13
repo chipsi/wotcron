@@ -667,6 +667,11 @@ int main(){
 
         delete doit;
 
+
+    /** Pausa pred dalsim kolom na ulozenie databazy */ 
+    chrono::seconds dura(5); // pausa 3 sec
+    this_thread::sleep_for( dura );
+
 	main2 = chrono::high_resolution_clock::now();
 	chrono::duration<double> elapsed_main = main2-main1;
 

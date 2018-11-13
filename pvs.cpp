@@ -89,6 +89,20 @@ void VacuumAnalyze()
         PQsendQuery(conn,query.c_str());
     query = "VACUUM ANALYZE pvs_all_05";
         PQsendQuery(conn,query.c_str());
+    query = "VACUUM ANALYZE pvs_all_05";
+        PQsendQuery(conn,query.c_str());
+    query = "VACUUM ANALYZE pvs_all_06";
+        PQsendQuery(conn,query.c_str());
+    query = "VACUUM ANALYZE pvs_all_07";
+        PQsendQuery(conn,query.c_str());
+    query = "VACUUM ANALYZE pvs_all_08";
+        PQsendQuery(conn,query.c_str());
+    query = "VACUUM ANALYZE pvs_all_09";
+        PQsendQuery(conn,query.c_str());
+    query = "VACUUM ANALYZE pvs_all_10";
+        PQsendQuery(conn,query.c_str());
+
+
     query = "VACUUM ANALYZE pvs_skirmish";
         PQsendQuery(conn,query.c_str());        
     query = "VACUUM ANALYZE pvs_skirmish_history";
