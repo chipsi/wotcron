@@ -157,8 +157,11 @@ void CheckData () {
     PGresult *prepared, *update_q, *insert_q;       
 
     const char *paramValues[1];
-    int riadkov;   
-
+    int riadkov, ins, upd;   
+    string insert_values = "";
+    string update_values = "";
+    ins = 0;
+    upd = 0;
 
     for(map<int,player>::iterator it = maps_data.begin(); it != maps_data.end(); it++) {
             
@@ -186,40 +189,49 @@ void CheckData () {
                 }                
 
                 if(up != 0) {
-                    string sql = "UPDATE players_info SET client_language='" + it->second.client_language + "',global_rating="+to_string(it->second.global_rating)+" WHERE account_id  = " + to_string(it->first);                   
                     
-                    update_q = PQexec(conn, sql.c_str());
-                    //cout << sql << endl;
+                    update_values += "("+to_string(it->first)+","+to_string(it->second.global_rating)+",'"+it->second.client_language+"'),";                    
                     // Pocitadlo updatov
                     update_counter ++;
-
-                        if (PQresultStatus(update_q) != PGRES_COMMAND_OK)
-                            {cout << "Chyba update players_info "  <<  PQresultErrorMessage(update_q) << endl;}
-                    PQclear(update_q);
-
-                    sql.clear();
+                    upd ++;
+                    
                 }
             }
 
             if(riadkov == 0 ) {
-                string ins_sql = "INSERT INTO players_info (account_id,global_rating,client_language) VALUES ";
-                ins_sql += "("+to_string(it->first)+","+to_string(it->second.global_rating)+",'"+it->second.client_language+"')";
-                
-                insert_q = PQexec(conn, ins_sql.c_str());
-
-                // Pocitadlo insertov
+        
+                insert_values += "("+to_string(it->first)+","+to_string(it->second.global_rating)+",'"+it->second.client_language+"'),";
+        
                 insert_counter ++;
-
-                        if (PQresultStatus(insert_q) != PGRES_COMMAND_OK)
-                            {cout << "Chyba update players_info "  <<  PQresultErrorMessage(insert_q) << endl;}
-
-                PQclear(insert_q);
-
-
-                ins_sql.clear();
-            }
-            PQclear(prepared);
+                ins ++;        
+                
+            }    
+            PQclear(prepared);        
     }    
+    
+    if(ins > 0) {
+        insert_values.pop_back();
+        string query = "INSERT INTO players_info (account_id,global_rating,client_language) VALUES " + insert_values ;         
+        insert_q = PQexec(conn, query.c_str());        
+        if (PQresultStatus(insert_q) != PGRES_COMMAND_OK)
+                            {cout << "Chyba insert players_info "  <<  PQresultErrorMessage(insert_q) << endl;}
+        query.clear();insert_values.clear();
+    }
+    
+    if(upd > 0) {
+        update_values.pop_back();
+        string query = "UPDATE players_info as p SET global_rating = u.global_rating, client_language = u.client_language FROM (VALUES " + update_values + ") as u (account_id,global_rating,client_language) WHERE p.account_id = u.account_id";        
+        update_q = PQexec(conn, query.c_str());
+        
+        if (PQresultStatus(update_q) != PGRES_COMMAND_OK)
+                            {cout << "Chyba update players_info "  <<  PQresultErrorMessage(update_q) << endl;}
+        query.clear();update_values.clear();
+    }
+    
+    
+    
+    insert_values.clear();
+    
 }
 
 
