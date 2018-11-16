@@ -112,21 +112,28 @@ string SendCurl::SendWOT(string method, string post)
     using json = nlohmann::json;
     json js;
     try{
-        js = json::parse(data);
+        js = json::parse(data);       
     }
     catch(json::parse_error& e)  {
         cout << "Parser in SendCurl: " << e.what() << endl;
         cout << js << endl;
     }
 
-    string status;
-  
-    status = js["status"].get<string>();
+    /*
+    json::iterator it = js.begin();  
+    cout << "Iterator: " << *it << endl;
+    */
 
-    if(status.compare("ok") != 0) {
-        string fail = js["error"]["field"].get<string>() + ", " + js["error"]["message"].get<string>() + ": " + js["error"]["value"].get<string>();
-        throw runtime_error(fail);       
-    }
+    string status;
+    status = js["status"];    
+
+    if( status == "error" ) {
+        cout << "Chyba! :"<< js << endl;
+        if(status.compare("ok") != 0) {
+        //string fail = js["error"]["field"].get<string>() + ", " + js["error"]["message"].get<string>() + ": " + js["error"]["value"].get<string>();
+        }
+    }    
+    
     js.clear();
     
     

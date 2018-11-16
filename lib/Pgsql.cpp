@@ -13,28 +13,26 @@ PGconn *Pgsql::Connect()
         
     con = PQconnectdb(conninfo);
         
-    if (PQstatus(con) != CONNECTION_OK)
-    {
-        fprintf(stderr, "Connection to database failed: %s",
-        PQerrorMessage(con));
+    if (PQstatus(con) != CONNECTION_OK)  {        
+        std::cout << "Chyba pri vytvarani spojenia do databazy!  "<< std::endl << PQerrorMessage(con) << std::endl;
     }
+    
     
     return con;
 }
 
 PGconn *Pgsql::Get()
 {
-   PGconn  *con;
+   //PGconn  *con;
         
-    con = PQconnectdb(conninfo);
+    //con = PQconnectdb(conninfo);
         
-    if (PQstatus(con) != CONNECTION_OK)
-    {
+    if (PQstatus(this->pgsql) != CONNECTION_OK)  {
         fprintf(stderr, "Connection to database failed: %s",
-        PQerrorMessage(con));
+        PQerrorMessage(this->pgsql));
     }
     
-    return con;
+    return this->pgsql;
 }
 
 PGresult *Pgsql::Query(const char *sql)
