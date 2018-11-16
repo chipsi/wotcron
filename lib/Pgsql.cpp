@@ -37,7 +37,6 @@ PGconn *Pgsql::Get()
 
 PGresult *Pgsql::Query(const char *sql)
 {
-    
     return PQexec(this->pgsql, sql);
 }
 

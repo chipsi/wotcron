@@ -3,3 +3,4 @@ PlayersAll.o
 PlayersInfo2.o
 lib/Pgsql.o
 lib/SendCurl.o
+lib/Pgsql.h

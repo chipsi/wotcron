@@ -165,26 +165,12 @@ void GetDataFromWOT(){
 
      
         
-             thread t1(GetDataFromServer,1);
-        
-        
-        
+          thread t1(GetDataFromServer,1);        
           thread t2(GetDataFromServer,2);
-        
-
-        
           thread t3(GetDataFromServer,3);
-        
-
-        
           thread t4(GetDataFromServer,4);
-        
-
-        
           thread t5(GetDataFromServer,5);
-        
-
-        t1.join();t2.join();t3.join(); t4.join();t5.join();
+          t1.join();t2.join();t3.join(); t4.join();t5.join();
 
      
         
@@ -262,7 +248,7 @@ void ReadDataFromFile() {
      
      for( i = 1; i < counter_send_post ; i++) {
           
-          json_data = CitajSubor(i);          
+          json_data = CitajSubor(i);        
 
           SpracujData(json_data);
           json_data.clear();
